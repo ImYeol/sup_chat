@@ -1,65 +1,27 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:sup_chat/component/button_wrapper.dart';
+import 'package:sup_chat/controller/login_controller.dart';
+import 'package:sup_chat/ui/login/login_outlined_form_field.dart';
 
 class LoginTabView extends StatelessWidget {
+  final controller = Get.find<LoginController>();
   LoginTabView({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      child: Column(
-        children: [],
-      ),
-    );
-  }
-
-  Widget buildEmailAdressTextFormField(BuildContext context) {
-    return Padding(
-      padding: EdgeInsetsDirectional.fromSTEB(0, 20, 0, 0),
-      child: TextFormField(
-        //controller: emailAddressLoginController,
-        obscureText: false,
-        decoration: InputDecoration(
-          labelText: 'Email Address',
-          labelStyle: Theme.of(context).textTheme.labelSmall,
-          hintText: 'Enter your email...',
-          hintStyle: Theme.of(context).textTheme.labelSmall,
-          enabledBorder: OutlineInputBorder(
-            borderSide: BorderSide(
-              color: Theme.of(context).iconTheme.color ??
-                  Theme.of(context).colorScheme.surface,
-              width: 1,
-            ),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderSide: BorderSide(
-              color: Theme.of(context).iconTheme.color ??
-                  Theme.of(context).colorScheme.surface,
-              width: 1,
-            ),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          errorBorder: OutlineInputBorder(
-            borderSide: const BorderSide(
-              color: Color(0x00000000),
-              width: 1,
-            ),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          focusedErrorBorder: OutlineInputBorder(
-            borderSide: const BorderSide(
-              color: Color(0x00000000),
-              width: 1,
-            ),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          filled: true,
-          fillColor: Theme.of(context).backgroundColor,
-          contentPadding: const EdgeInsetsDirectional.fromSTEB(20, 24, 20, 24),
+      child: Form(
+        child: Column(
+          key: controller.loginFormKey,
+          children: [
+            LoginOutlinedFormField(labelText: 'Email Address', hintText: '이메일을 입력해주세요', validator: controller.emailValidator, onSaved: (value) => controller.email = value),
+            LoginOutlinedFormField(labelText: 'Password', hintText: '암호를 입력해주세요', validator: controller.passwordValidator, onSaved: (value) => controller.password = value,),
+            buildLoginButton(context),
+            buildForgotPasswordButton(context)
+          ],
         ),
-        style: Theme.of(context).textTheme.labelMedium,
-      ),
+      )
     );
   }
 
@@ -67,23 +29,7 @@ class LoginTabView extends StatelessWidget {
     return Padding(
       padding: EdgeInsetsDirectional.fromSTEB(0, 24, 0, 0),
       child: ButtonWrapper(
-        onPressed: () async {
-          // final user = await signInWithEmail(
-          //   context,
-          //   emailAddressLoginController!.text,
-          //   passwordLoginController!.text,
-          // );
-          // if (user == null) {
-          //   return;
-          // }
-          // await Navigator.pushAndRemoveUntil(
-          //   context,
-          //   MaterialPageRoute(
-          //     builder: (context) => HomePageWidget(),
-          //   ),
-          //   (r) => false,
-          // );
-        },
+        onPressed: () => controller.logIn(),
         text: 'Login',
         options: ButtonWrapperOption(
           width: 230,

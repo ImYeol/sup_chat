@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:sup_chat/controller/loging_controller.dart';
+import 'package:sup_chat/controller/login_controller.dart';
 import 'package:sup_chat/ui/login/login_tab_view.dart';
 import 'package:sup_chat/ui/login/register_tabl_view.dart';
 
