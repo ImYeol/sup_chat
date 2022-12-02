@@ -35,9 +35,8 @@ class UserService extends GetxService {
           getUser(firebaseUser.uid).then((user) async {
             if (user.exists == false || user.createdAt == null) {
               // user doc 생성
-              print("No user document exists");
+              print("No user document exists : ${user.name}");
               user.update({'createdAt': Timestamp.now()});
-              UserStatus(name: user.name).create(user.uid);
             }
           });
         }

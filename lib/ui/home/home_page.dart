@@ -32,7 +32,10 @@ class HomePage extends GetView<HomeController> {
                     children: [
                       TabBar(
                         isScrollable: true,
-                        labelStyle: Get.textTheme.bodyLarge,
+                        labelStyle: Get.textTheme.bodyMedium,
+                        labelColor: Get.theme.colorScheme.outline,
+                        unselectedLabelColor: const Color(0xFF8B97A2),
+                        unselectedLabelStyle: Get.textTheme.bodyMedium,
                         indicatorColor: Get.theme.colorScheme.tertiary,
                         indicatorWeight: 3,
                         tabs: const [

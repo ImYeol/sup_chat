@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_database/firebase_database.dart';
@@ -10,6 +11,9 @@ import 'package:sup_chat/bindings/setting_binding.dart';
 import 'package:sup_chat/constants/app_route.dart';
 import 'package:sup_chat/constants/app_theme.dart';
 import 'package:sup_chat/firebase_options.dart';
+import 'package:sup_chat/service/knock_service.dart';
+import 'package:sup_chat/service/status_service.dart';
+import 'package:sup_chat/service/user_service.dart';
 import 'package:sup_chat/ui/friend/add_friend_page.dart';
 import 'package:sup_chat/ui/home/home_page.dart';
 import 'package:sup_chat/ui/login/login_page.dart';
@@ -32,13 +36,30 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
-  );
+  ).then((value) => initServices());
 
   if (USE_DATABASE_EMULATOR) {
-    FirebaseDatabase.instance.useDatabaseEmulator(emulatorHost, emulatorPort);
+    try {
+      FirebaseFirestore.instance.useFirestoreEmulator(emulatorHost, 8080);
+      FirebaseDatabase.instance.useDatabaseEmulator(emulatorHost, 9000);
+      await FirebaseAuth.instance.useAuthEmulator(emulatorHost, 9099);
+    } catch (e) {
+      // ignore: avoid_print
+      print(e);
+    }
   }
 
   runApp(const MyApp());
+}
+
+void initServices() {
+  //UserService.instance.startService();
+  Get.put(UserService());
+  Get.put(StatusService());
+  Get.put(KnockService());
+  Future.delayed(const Duration(milliseconds: 500), () {
+    Get.find<UserService>().init();
+  });
 }
 
 class MyApp extends StatelessWidget {

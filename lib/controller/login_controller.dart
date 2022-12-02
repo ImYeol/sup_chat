@@ -1,6 +1,9 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:sup_chat/model/status.dart';
+import 'package:sup_chat/model/user_status.dart';
+import 'package:sup_chat/service/status_service.dart';
 import 'package:sup_chat/service/user_service.dart';
 
 class LoginController extends GetxController {
@@ -51,7 +54,9 @@ class LoginController extends GetxController {
   }
 
   String? nameValidator(String? value) {
-    if (value != null && GetUtils.isUsername(value) && GetUtils.isLengthLessThan(value, 12))
+    if (value != null &&
+        GetUtils.isUsername(value) &&
+        GetUtils.isLengthLessThan(value, 12))
       return null;
     else if (value == null)
       return '이름을 입력해주세요';
@@ -81,31 +86,28 @@ class LoginController extends GetxController {
     if (signinFormKey.currentState!.validate()) {
       signinFormKey.currentState!.save();
     } else {
-      print('invalid trying login');
+      print('invalid trying signup');
       return;
     }
 
     try {
       final result = await _auth.createUserWithEmailAndPassword(
-          email: email!.trim(),
-          password: password!.trim());
+          email: email!.trim(), password: password!.trim());
       print("after createUserWithEmailAndPassword");
       final firebaseUser = result.user;
       print("updateDisplayName");
-      firebaseUser?.updateDisplayName(name!.trim());
-      print("create user");
-      // TODO: remove getUser
-      Get.find<UserService>()
-          .getUser(firebaseUser?.uid ?? "")
-          .then((user) => user.update({
-                "name": name!.trim(),
-              }));
+      firebaseUser?.updateDisplayName(name!.trim()).then((_) {
+        final status = UserStatus(name: name, statusType: StatusType.INVALID);
+        status.create(firebaseUser.uid);
+        print('create user status');
+      });
     } catch (e) {
       Get.snackbar("About Account", "Account message",
           snackPosition: SnackPosition.BOTTOM,
           titleText:
               Text("Account creation failed", style: Get.textTheme.labelMedium),
           messageText: Text(e.toString(), style: Get.textTheme.labelSmall));
+      print('signup error: ${e.toString()}');
     }
   }
 
@@ -119,8 +121,7 @@ class LoginController extends GetxController {
 
     try {
       await _auth.signInWithEmailAndPassword(
-          email: email!.trim(),
-          password: password!.trim());
+          email: email!.trim(), password: password!.trim());
     } catch (e) {
       Get.snackbar("About Login", "Login message",
           snackPosition: SnackPosition.BOTTOM,

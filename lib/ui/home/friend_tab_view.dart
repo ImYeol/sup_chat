@@ -6,6 +6,8 @@ import 'package:sup_chat/component/user_status_card.dart';
 import 'package:sup_chat/component/user_status_icon.dart';
 import 'package:sup_chat/controller/home_controller.dart';
 import 'package:sup_chat/model/status.dart';
+import 'package:sup_chat/service/status_service.dart';
+import 'package:sup_chat/service/user_service.dart';
 
 class FriendTabView extends StatelessWidget {
   final controller = Get.find<HomeController>();
@@ -37,12 +39,18 @@ class FriendTabView extends StatelessWidget {
           ),
           scrollDirection: Axis.vertical,
           itemCount: controller.friends.length,
-          itemBuilder: ((context, index) => UserStatusCard(
-                icon: UserStatusIcon(iconData: Icons.directions_bike_rounded),
-                statusText: mapStatusTypeToString[controller
-                        .userStatusMap?[controller.friends[index].name]
-                        ?.statusType] ??
-                    '',
+          itemBuilder: ((context, index) => InkWell(
+                onDoubleTap: () =>
+                    controller.sendKnock(controller.friends[index]),
+                onTap: () => controller.confirmFriendStatus(),
+                onLongPress: () => controller.selectFriendsForGroupKnock(),
+                child: UserStatusCard(
+                  icon: UserStatusIcon(iconData: Icons.directions_bike_rounded),
+                  statusText: mapStatusTypeToString[controller
+                          .userStatusMap?[controller.friends[index].name]
+                          ?.statusType] ??
+                      '',
+                ),
               ))),
     );
   }
@@ -61,7 +69,12 @@ class FriendTabView extends StatelessWidget {
   Widget buildGroupKnockButton() {
     return ButtonWrapper(
       onPressed: () {
-        print('Button pressed ...');
+        // final uid = Get.find<UserService>().currentUser!.uid;
+        // Get.find<StatusService>().create('5da55', {
+        //   'statusType': StatusType.INVALID.index,
+        //   'name': '',
+        //   'comment': ''
+        // }).then((value) => print('done'));
       },
       text: '그룹 노크',
       icon: const Icon(

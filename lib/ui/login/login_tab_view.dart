@@ -11,18 +11,31 @@ class LoginTabView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      child: Form(
-        child: Column(
+        padding: const EdgeInsets.only(left: 24, top: 0, right: 24),
+        child: Form(
           key: controller.loginFormKey,
-          children: [
-            LoginOutlinedFormField(labelText: 'Email Address', hintText: '이메일을 입력해주세요', validator: controller.emailValidator, onSaved: (value) => controller.email = value),
-            LoginOutlinedFormField(labelText: 'Password', hintText: '암호를 입력해주세요', validator: controller.passwordValidator, onSaved: (value) => controller.password = value,),
-            buildLoginButton(context),
-            buildForgotPasswordButton(context)
-          ],
-        ),
-      )
-    );
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                LoginOutlinedFormField(
+                    labelText: 'Email Address',
+                    hintText: '이메일을 입력해주세요',
+                    validator: controller.emailValidator,
+                    onSaved: (value) => controller.email = value),
+                LoginOutlinedFormField(
+                  labelText: 'Password',
+                  hintText: '암호를 입력해주세요',
+                  validator: controller.passwordValidator,
+                  onSaved: (value) => controller.password = value,
+                ),
+                buildLoginButton(context),
+                buildForgotPasswordButton(context)
+              ],
+            ),
+          ),
+        ));
   }
 
   Widget buildLoginButton(BuildContext context) {
@@ -68,18 +81,18 @@ class LoginTabView extends StatelessWidget {
           //   (r) => false,
           // );
         },
-        text: 'Login',
+        text: 'Forgot Password',
         options: ButtonWrapperOption(
-          width: 230,
-          height: 50,
-          color: Theme.of(context).primaryColor,
+          width: 185,
+          height: 40,
+          color: Theme.of(context).colorScheme.tertiary,
           textStyle: Theme.of(context).textTheme.titleMedium,
-          elevation: 3,
+          elevation: 0,
           borderSide: const BorderSide(
             color: Colors.transparent,
             width: 1,
           ),
-          borderRadius: BorderRadius.circular(40),
+          borderRadius: BorderRadius.circular(8),
         ),
       ),
     );

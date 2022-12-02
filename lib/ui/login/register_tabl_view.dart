@@ -12,19 +12,41 @@ class RegisterTabView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      child: Form(
-        child: Column(
+        padding: const EdgeInsets.only(left: 24, right: 24),
+        child: Form(
           key: controller.signinFormKey,
-          children: [
-            LoginOutlinedFormField(labelText: 'Email Address', hintText: '이메일을 입력해주세요', validator: controller.emailValidator, onSaved: (value) => controller.email = value),
-            LoginOutlinedFormField(labelText: 'Name', hintText: '닉네임을 입력해주세요', validator: controller.nameValidator, onSaved: (value) => controller.name = value,),
-            LoginOutlinedFormField(labelText: 'Password', hintText: '암호를 입력해주세요', validator: controller.passwordValidator, onSaved: (value) => controller.password = value,),
-            LoginOutlinedFormField(labelText: 'Confirm Password', hintText: '암호를 입력해주세요', validator: controller.confirmValidator),
-            buildSignInButton(context),
-          ],
-        ),
-      )
-    );
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                LoginOutlinedFormField(
+                    labelText: 'Email Address',
+                    hintText: '이메일을 입력해주세요',
+                    validator: controller.emailValidator,
+                    onSaved: (value) => controller.email = value),
+                LoginOutlinedFormField(
+                  labelText: 'Name',
+                  hintText: '닉네임을 입력해주세요',
+                  validator: controller.nameValidator,
+                  onSaved: (value) => controller.name = value,
+                ),
+                LoginOutlinedFormField(
+                  labelText: 'Password',
+                  hintText: '암호를 입력해주세요',
+                  validator: controller.passwordValidator,
+                  onSaved: (value) => controller.password = value,
+                  onChanged: (value) => controller.password = value,
+                ),
+                LoginOutlinedFormField(
+                    labelText: 'Confirm Password',
+                    hintText: '암호를 입력해주세요',
+                    validator: controller.confirmValidator),
+                buildSignInButton(context),
+              ],
+            ),
+          ),
+        ));
   }
 
   Widget buildSignInButton(BuildContext context) {
@@ -32,7 +54,7 @@ class RegisterTabView extends StatelessWidget {
       padding: EdgeInsetsDirectional.fromSTEB(0, 24, 0, 0),
       child: ButtonWrapper(
         onPressed: () => controller.signUp(),
-        text: 'Login',
+        text: 'SignUp',
         options: ButtonWrapperOption(
           width: 230,
           height: 50,

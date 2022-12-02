@@ -6,13 +6,22 @@ class LoginOutlinedFormField extends StatelessWidget {
   final String hintText;
   final String? Function(String?)? validator;
   final void Function(String?)? onSaved;
+  final void Function(String?)? onChanged;
 
-  const LoginOutlinedFormField({Key? key, this.padding, required this.labelText, required this.hintText, this.validator, this.onSaved}) : super(key: key);
+  const LoginOutlinedFormField(
+      {Key? key,
+      this.padding,
+      required this.labelText,
+      required this.hintText,
+      this.validator,
+      this.onSaved,
+      this.onChanged})
+      : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: padding?? EdgeInsetsDirectional.fromSTEB(0, 20, 0, 0),
+      padding: padding ?? EdgeInsetsDirectional.fromSTEB(0, 20, 0, 0),
       child: TextFormField(
         //controller: emailAddressLoginController,
         obscureText: false,
@@ -58,6 +67,7 @@ class LoginOutlinedFormField extends StatelessWidget {
         style: Theme.of(context).textTheme.labelMedium,
         validator: validator,
         onSaved: onSaved,
+        onChanged: onChanged,
       ),
     );
   }

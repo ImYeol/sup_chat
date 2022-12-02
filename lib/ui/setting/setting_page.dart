@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:sup_chat/component/button_wrapper.dart';
 import 'package:sup_chat/constants/app_theme.dart';
+import 'package:sup_chat/service/user_service.dart';
 
 class SettingPage extends StatelessWidget {
   bool switchListTileValue1 = false;
@@ -84,9 +85,7 @@ class SettingPage extends StatelessWidget {
           Padding(
             padding: EdgeInsetsDirectional.fromSTEB(0, 24, 0, 0),
             child: ButtonWrapper(
-              onPressed: () async {
-                Navigator.pop(context);
-              },
+              onPressed: () => Get.find<UserService>().signOut(),
               text: '로그아웃',
               options: ButtonWrapperOption(
                 width: 190,
