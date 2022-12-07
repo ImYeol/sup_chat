@@ -41,7 +41,7 @@ class SettingPage extends StatelessWidget {
           Padding(
             padding: EdgeInsetsDirectional.fromSTEB(0, 12, 0, 0),
             child: SwitchListTile.adaptive(
-              value: switchListTileValue1 ??= true,
+              value: switchListTileValue1,
               onChanged: (newValue) async {
                 // setState(() => switchListTileValue1 = newValue!);
               },
@@ -61,10 +61,10 @@ class SettingPage extends StatelessWidget {
             ),
           ),
           SwitchListTile.adaptive(
-            value: switchListTileValue2 ??= true,
+            value: switchListTileValue2,
             onChanged: (newValue) async {
               // setState(() => switchListTileValue2 = newValue!);
-              switchListTileValue2 = newValue!;
+              switchListTileValue2 = newValue;
               Get.changeTheme(
                   newValue ? AppDarkTheme.theme : AppLightTheme.theme);
             },

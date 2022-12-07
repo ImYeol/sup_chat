@@ -10,7 +10,8 @@ import 'package:sup_chat/model/user_model.dart';
 import 'package:sup_chat/model/user_status.dart';
 
 class UserService extends GetxService {
-  UserModel? currentUser;
+  final currentUser = UserModel().obs;
+  final friends = <UserModel>[].obs;
   StreamSubscription? userDocumentSubscription;
 
   CollectionReference get col => FirebaseFirestore.instance.collection('users');
@@ -20,91 +21,90 @@ class UserService extends GetxService {
   CollectionReference get friendsCol => doc.collection('friends');
 
   void init() {
-    FirebaseAuth.instance.authStateChanges().listen((firebaseUser) {
-      print("authStateChanges called");
+    FirebaseAuth.instance.authStateChanges().listen((firebaseUser) async {
       if (firebaseUser == null) {
-        print("startService - firebaseUser is null");
+        print("authStateChanges - firebaseUser is null");
         unobserveUserDoc();
-        print("startService - route is ${Get.currentRoute}");
         if (Get.currentRoute != AppRoute.LOGIN) {
           Get.offAllNamed(AppRoute.LOGIN);
         }
       } else {
-        if (currentUser?.uid != firebaseUser.uid) {
-          print("startService - currentUser is null");
-          getUser(firebaseUser.uid).then((user) async {
-            if (user.exists == false || user.createdAt == null) {
-              // user doc 생성
-              print("No user document exists : ${user.name}");
-              user.update({'createdAt': Timestamp.now()});
-            }
-          });
-        }
+        print("authStateChanges - user is ${firebaseUser.displayName}");
+        UserModel().update({
+          'name': firebaseUser.displayName,
+          'uid': firebaseUser.uid,
+          'createdAt': Timestamp.now()
+        });
         observeUserDoc();
-        print("after observeUserDoc");
-        print("startService2 - route is ${Get.currentRoute}");
-        if (Get.currentRoute != AppRoute.HOME) {
-          Get.offAllNamed(AppRoute.HOME);
-        }
-        // Get.offAllNamed(AppRoute.HOME);
+        loadFriends();
       }
     });
   }
 
-  Map<String, UserModel> userDocumentContainer = {};
   Future<UserModel> getUser(
     String uid, {
     bool cache = true,
   }) async {
     final snapshot = await col.doc(uid).get();
-    //userDocumentContainer[uid] = UserModel.fromSnapshot(snapshot);
-    //return userDocumentContainer[uid]!;
     return UserModel.fromSnapshot(snapshot);
   }
 
-  Future<UserModel> getUserByName(String name) async {
+  Future<UserModel> getUserByName(String name, {useCache = true}) async {
+    if (useCache) {
+      return friends.where((friend) => friend.name == name).first;
+    }
     final snapshot = await col.where('name', isEqualTo: name).get();
     final user = snapshot.docs.isNotEmpty
         ? snapshot.docs.map((doc) => UserModel.fromSnapshot(doc)).first
         : UserModel();
-    print("getUserByName : ${user}");
+    print("getUserByName : $user");
     return user;
   }
 
-  Future<List<UserModel>> getFriends() async {
+  void loadFriends() async {
+    print("loadFriends");
     final snapshot = await friendsCol.get();
-    return snapshot.docs.isNotEmpty
-        ? snapshot.docs.map((doc) => UserModel.fromSnapshot(doc)).toList()
-        : <UserModel>[];
+    if (snapshot.docs.isNotEmpty) {
+      friends.assignAll(
+          snapshot.docs.map((doc) => UserModel.fromSnapshot(doc)).toList());
+    }
   }
 
   Future<void> addFriend(UserModel friend) async {
-    if (friend.uid == currentUser?.uid) {
+    if (friend.uid == currentUser.value.uid) {
       print("friend is current user");
       return;
     }
     friendsCol
         .doc(friend.uid)
         .set({'name': friend.name, 'createdAt': Timestamp.now()});
+    if (friends.contains(friend) == false) {
+      print("add friend : $friend");
+      friends.add(friend);
+      friends.refresh();
+    }
   }
 
   Future<void> deleteFriend(UserModel friend) async {
-    if (friend.uid == currentUser?.uid) {
+    if (friend.uid == currentUser.value.uid) {
       print("friend is current user");
       return;
     }
     await friendsCol.doc(friend.uid).delete();
+    friends.remove(friend);
   }
 
   void observeUserDoc() {
+    print("observeUserDoc");
     userDocumentSubscription?.cancel();
     userDocumentSubscription =
         doc.snapshots().listen((DocumentSnapshot snapshot) async {
       if (snapshot.exists == false) {
         // log('---> User document not exits in observeUserDoc.');
-        print('---> User document not exits in observeUserDoc.');
+        print('---> User document not exits in observeUserDoc');
+        return;
       }
-      currentUser = UserModel.fromSnapshot(snapshot);
+      currentUser.value = UserModel.fromSnapshot(snapshot);
       // log('----> observeUserDoc and update event with; $user');
       //userChange.add(user);
       print('----> observeUserDoc and update event with; $currentUser');
@@ -114,7 +114,7 @@ class UserService extends GetxService {
   /// 로그아웃을 할 때 호출되며, 사용자 모델(user)을 초기화하고, listening 해제하고, 이벤트를 날린다.
   void unobserveUserDoc() {
     userDocumentSubscription?.cancel();
-    currentUser = UserModel();
+    currentUser.value = UserModel();
     //userChange.add(user);
   }
 

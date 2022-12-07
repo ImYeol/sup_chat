@@ -1,7 +1,10 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:sup_chat/constants/app_route.dart';
 import 'package:sup_chat/model/status.dart';
+import 'package:sup_chat/model/user_model.dart';
 import 'package:sup_chat/model/user_status.dart';
 import 'package:sup_chat/service/status_service.dart';
 import 'package:sup_chat/service/user_service.dart';
@@ -95,12 +98,23 @@ class LoginController extends GetxController {
           email: email!.trim(), password: password!.trim());
       print("after createUserWithEmailAndPassword");
       final firebaseUser = result.user;
-      print("updateDisplayName");
-      firebaseUser?.updateDisplayName(name!.trim()).then((_) {
+      if (firebaseUser != null) {
+        print("updateDisplayName");
+        final trimedName = name!.trim();
+        await firebaseUser.updateDisplayName(trimedName);
+        await UserModel().update({
+          'uid': firebaseUser.uid,
+          'name': trimedName,
+          'createdAt': Timestamp.now()
+        });
         final status = UserStatus(name: name, statusType: StatusType.INVALID);
-        status.create(firebaseUser.uid);
-        print('create user status');
-      });
+        status.create(firebaseUser.uid).then((_) {
+          print('create user status');
+          Get.offNamed(AppRoute.HOME);
+        }, onError: (e) {
+          print('status create error : $e');
+        });
+      }
     } catch (e) {
       Get.snackbar("About Account", "Account message",
           snackPosition: SnackPosition.BOTTOM,
@@ -122,6 +136,7 @@ class LoginController extends GetxController {
     try {
       await _auth.signInWithEmailAndPassword(
           email: email!.trim(), password: password!.trim());
+      Get.offNamed(AppRoute.HOME);
     } catch (e) {
       Get.snackbar("About Login", "Login message",
           snackPosition: SnackPosition.BOTTOM,

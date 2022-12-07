@@ -6,8 +6,7 @@ import 'package:sup_chat/component/user_status_card.dart';
 import 'package:sup_chat/component/user_status_icon.dart';
 import 'package:sup_chat/controller/home_controller.dart';
 import 'package:sup_chat/model/status.dart';
-import 'package:sup_chat/service/status_service.dart';
-import 'package:sup_chat/service/user_service.dart';
+import 'package:sup_chat/model/user_status.dart';
 
 class FriendTabView extends StatelessWidget {
   final controller = Get.find<HomeController>();
@@ -20,14 +19,16 @@ class FriendTabView extends StatelessWidget {
       mainAxisSize: MainAxisSize.max,
       children: [
         Expanded(
-          child: buildFriendListView(),
+          child: Obx(() => buildFriendListView(controller.friendStatusMap)),
         ),
         buildBottomMenu()
       ],
     );
   }
 
-  Widget buildFriendListView() {
+  Widget buildFriendListView(Map<String, UserStatus> friendStatusMap) {
+    final friendStatusList = friendStatusMap.values.toList();
+    print("friends size = ${friendStatusList.length}");
     return Padding(
       padding: const EdgeInsetsDirectional.fromSTEB(5, 10, 5, 0),
       child: GridView.builder(
@@ -38,20 +39,21 @@ class FriendTabView extends StatelessWidget {
             childAspectRatio: 1,
           ),
           scrollDirection: Axis.vertical,
-          itemCount: controller.friends.length,
-          itemBuilder: ((context, index) => InkWell(
+          itemCount: friendStatusList.length,
+          itemBuilder: (context, index) => InkWell(
                 onDoubleTap: () =>
-                    controller.sendKnock(controller.friends[index]),
+                    controller.sendKnock(friendStatusList[index].name ?? ''),
                 onTap: () => controller.confirmFriendStatus(),
                 onLongPress: () => controller.selectFriendsForGroupKnock(),
                 child: UserStatusCard(
                   icon: UserStatusIcon(iconData: Icons.directions_bike_rounded),
-                  statusText: mapStatusTypeToString[controller
-                          .userStatusMap?[controller.friends[index].name]
-                          ?.statusType] ??
-                      '',
+                  displayText: friendStatusList[index].name,
+                  statusText: mapStatusTypeToString[
+                          friendStatusList[index].statusType] ??
+                      '초기상태',
+                  labelText: friendStatusList[index].comment ?? '',
                 ),
-              ))),
+              )),
     );
   }
 
@@ -97,18 +99,15 @@ class FriendTabView extends StatelessWidget {
 
   Widget buildAddFriendButton() {
     return IconButtonWrapper(
-      borderColor: Colors.transparent,
-      borderRadius: 30,
-      borderWidth: 1,
-      buttonSize: 45,
-      icon: Icon(
-        Icons.person_add,
-        color: Get.theme.iconTheme.color,
-        size: 30,
-      ),
-      onPressed: () {
-        print('IconButton pressed ...');
-      },
-    );
+        borderColor: Colors.transparent,
+        borderRadius: 30,
+        borderWidth: 1,
+        buttonSize: 45,
+        icon: Icon(
+          Icons.person_add,
+          color: Get.theme.iconTheme.color,
+          size: 30,
+        ),
+        onPressed: () => controller.addFriendIfResultExist());
   }
 }

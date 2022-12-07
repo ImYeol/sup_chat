@@ -7,7 +7,7 @@ class UserStatus {
   StatusType? statusType;
   String? comment;
 
-  UserStatus({this.name, this.statusType, this.comment});
+  UserStatus({this.name, this.statusType = StatusType.INVALID, this.comment});
 
   Future<void> create(String uid) async {
     return Get.find<StatusService>().create(uid, this);
@@ -33,7 +33,7 @@ class UserStatus {
         'comment': comment ?? '',
       };
 
-  UserStatus.fromJson(Map<String, dynamic> json) {
+  UserStatus.fromJson(dynamic json) {
     name = json['name'] ?? '';
     statusType =
         StatusType.values[json['statusType'] ?? StatusType.INVALID.index];

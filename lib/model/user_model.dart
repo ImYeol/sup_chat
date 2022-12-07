@@ -39,8 +39,6 @@ class UserModel {
         ? Timestamp(data['updatedAt'], 0)
         : data['updatedAt'];
     print("createdAt = $createdAt, updatedAt = $updatedAt");
-    //friends = List.from(data[])
-    print("friends : ${data['friends']}");
   }
 
   UserModel.fromSnapshot(DocumentSnapshot snapshot) {
@@ -51,4 +49,10 @@ class UserModel {
   String toString() {
     return "uid = $uid, name = $name, updatedAt = $updatedAt createdAt = $createdAt";
   }
+
+  @override
+  bool operator ==(covariant UserModel other) => name == other.name;
+
+  @override
+  int get hashCode => name.hashCode;
 }

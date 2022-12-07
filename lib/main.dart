@@ -53,13 +53,9 @@ void main() async {
 }
 
 void initServices() {
-  //UserService.instance.startService();
   Get.put(UserService());
   Get.put(StatusService());
   Get.put(KnockService());
-  Future.delayed(const Duration(milliseconds: 500), () {
-    Get.find<UserService>().init();
-  });
 }
 
 class MyApp extends StatelessWidget {

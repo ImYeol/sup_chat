@@ -1,10 +1,8 @@
-import 'dart:async';
-
-import 'package:firebase_database/firebase_database.dart';
-import 'package:firebase_database/ui/utils/stream_subscriber_mixin.dart';
 import 'package:get/get.dart';
+import 'package:sup_chat/constants/app_route.dart';
 import 'package:sup_chat/model/knock.dart';
 import 'package:sup_chat/model/notification.dart';
+import 'package:sup_chat/model/status.dart';
 import 'package:sup_chat/model/user_model.dart';
 import 'package:sup_chat/model/user_status.dart';
 import 'package:sup_chat/service/knock_service.dart';
@@ -12,42 +10,42 @@ import 'package:sup_chat/service/status_service.dart';
 import 'package:sup_chat/service/user_service.dart';
 
 class HomeController extends GetxController {
-  final repository = Get.find<StatusService>();
-  final _friends = <UserModel>[].obs;
-  final _userStatusMap = <String, UserStatus>{}.obs;
-  List<StreamSubscription>? _friendStatusSubscriptions;
+  final userRepository = Get.find<UserService>();
+  final statusRepository = Get.find<StatusService>();
 
-  UserModel? get user => Get.find<UserService>().currentUser;
-  List<UserModel> get friends => _friends.value;
-  Map<String, UserStatus> get userStatusMap => _userStatusMap;
+  UserModel get currentUser => userRepository.currentUser.value;
+  final _currentUserStatus = UserStatus().obs;
+  List<UserModel> get friends => userRepository.friends;
+  UserStatus get currentUserStatus => _currentUserStatus.value;
+  Map<String, UserStatus> get friendStatusMap => statusRepository.userStatusMap;
 
   List<Notification> get notifications =>
       [Notification(title: '친구 상태가 변경되었습니다')];
 
-  void sendKnock(UserModel friend) {
-    if (user != null) {
-      Get.find<KnockService>().send(Knock(
-          fromUid: user!.uid, toUid: friend.uid, updatedAt: DateTime.now()));
-    }
+  void sendKnock(String friendName) {
+    // Get.find<KnockService>().send(Knock(
+    //     fromUid: currentUser.uid,
+    //     toUid: friend.uid,
+    //     updatedAt: DateTime.now()));
+    statusRepository.update(
+        'Fm85jBXVsXPNXE1ICa9j6MZoatDd',
+        UserStatus(
+            name: 'test2', statusType: StatusType.BIKE, comment: 'asdf11'));
   }
 
   void sendGroupKnock(List<UserModel> friends) {}
 
-  void addFriend() {}
+  void addFriendIfResultExist() async {
+    final result = await Get.toNamed(AppRoute.ADD_FRIEND);
+    if (result != null) {
+      final friend = result as UserModel;
+      userRepository.addFriend(friend);
+    }
+  }
 
   void confirmFriendStatus() {}
 
   void selectFriendsForGroupKnock() {}
-
-  void onStatusChanged(DatabaseEvent event) {
-    final snapshot = (event.snapshot.value ?? {}) as Map<String, dynamic>;
-    final status = UserStatus.fromJson(snapshot);
-    final uid = event.snapshot.key;
-    print("onStatusChanged key = ${event.snapshot.key}, status = $status");
-    if (uid == null) return;
-    repository.update(uid, status);
-    updateUserStatus(uid);
-  }
 
   void onStatusError() {}
 
@@ -56,42 +54,47 @@ class HomeController extends GetxController {
     print("onKnockReceived changes = ${knockBox.changes}");
   }
 
-  void updateFriends(List<UserModel>? friends) {
-    _friendStatusSubscriptions ??= List<StreamSubscription>.empty();
-    friends?.map((friend) async {
-      _friendStatusSubscriptions!.add(repository.observeUserStatusRef(
-          friend.uid, onStatusChanged,
-          onError: onStatusError));
-      updateUserStatus(friend.uid);
-    });
-    _friends.value = friends ?? <UserModel>[];
+  void updateUserStatus(UserModel? user, {UserStatus? status}) async {
+    print("updateUserStatus : user= $user");
+    if (user == null) {
+      print('user is null');
+      return;
+    }
+    final userStatus = status ?? await statusRepository.read(user.uid);
+    print("updateUserStatus : status= $userStatus");
+    if (user.uid != currentUser.uid) {
+      statusRepository.observeUserStatusRef(user.uid);
+      statusRepository.update(user.uid, userStatus, useCache: true);
+      statusRepository.userStatusMap.refresh();
+    } else {
+      _currentUserStatus.value = userStatus;
+    }
   }
 
-  void updateUserStatus(String uid) async {
-    var status = await repository.read(uid);
-    _userStatusMap.update(uid, (value) => status ?? UserStatus(),
-        ifAbsent: () => status ?? UserStatus());
+  @override
+  void onInit() {
+    print("home_controller onInit");
+    Get.find<UserService>().init();
+    super.onInit();
   }
 
   @override
   void onReady() {
-    _friends.value = List<UserModel>.empty();
-    // update user status
-    if (user != null) {
-      Get.find<KnockService>().box.listen(() => onKnockReceived());
-    }
+    print("home_controller onReady");
     // update friends and status
-    Get.find<UserService>()
-        .getFriends()
-        .then((friends) => updateFriends(friends));
+    once(userRepository.currentUser, (user) => updateUserStatus(user));
+    ever(userRepository.friends, (friendList) {
+      print("friends changed $friendList");
+      statusRepository.unobserveUserStatusRef();
+      friendList.forEach(updateUserStatus);
+    });
+    Get.find<KnockService>().box.listen(() => onKnockReceived());
     super.onReady();
   }
 
   @override
   void onClose() {
-    _friendStatusSubscriptions?.map((subscription) => subscription.cancel());
-    print("_friendStatusSubscriptions : ${_friendStatusSubscriptions?.length}");
-    _userStatusMap.clear();
+    print("home_controller onClose");
     super.onClose();
   }
 }
