@@ -2,19 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:sup_chat/component/button_wrapper.dart';
 import 'package:sup_chat/constants/app_theme.dart';
+import 'package:sup_chat/controller/setting_controller.dart';
 import 'package:sup_chat/service/user_service.dart';
 
-class SettingPage extends StatelessWidget {
+class SettingPage extends GetView<SettingController> {
   bool switchListTileValue1 = false;
   bool switchListTileValue2 = false;
   SettingPage({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Get.theme.scaffoldBackgroundColor,
+    return Obx(() => Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Get.theme.scaffoldBackgroundColor,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         automaticallyImplyLeading: false,
         leading: IconButton(
           icon: Icon(
@@ -61,13 +62,8 @@ class SettingPage extends StatelessWidget {
             ),
           ),
           SwitchListTile.adaptive(
-            value: switchListTileValue2,
-            onChanged: (newValue) async {
-              // setState(() => switchListTileValue2 = newValue!);
-              switchListTileValue2 = newValue;
-              Get.changeTheme(
-                  newValue ? AppDarkTheme.theme : AppLightTheme.theme);
-            },
+            value: controller.isDarkMode,
+            onChanged: (isDarkMode) => controller.changeTheme(isDarkMode),
             title: Text(
               '다크모드',
               style: Get.textTheme.titleMedium,
@@ -102,6 +98,6 @@ class SettingPage extends StatelessWidget {
           ),
         ],
       ),
-    );
+    ));
   }
 }

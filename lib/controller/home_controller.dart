@@ -1,4 +1,5 @@
 import 'package:get/get.dart';
+import 'package:sup_chat/component/choose_status_sheet.dart';
 import 'package:sup_chat/constants/app_route.dart';
 import 'package:sup_chat/model/knock.dart';
 import 'package:sup_chat/model/notification.dart';
@@ -46,6 +47,10 @@ class HomeController extends GetxController {
   void confirmFriendStatus() {}
 
   void selectFriendsForGroupKnock() {}
+
+  void selectStatus() {
+    Get.bottomSheet(ChooseStatusSheet());
+  }
 
   void onStatusError() {}
 

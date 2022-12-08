@@ -14,7 +14,7 @@ class HomePage extends GetView<HomeController> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Get.theme.scaffoldBackgroundColor,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.max,
@@ -161,18 +161,7 @@ class HomePage extends GetView<HomeController> {
                     size: 50,
                   ),
                   onPressed: () async {
-                    // await showModalBottomSheet(
-                    //   isScrollControlled: true,
-                    //   backgroundColor: Colors.transparent,
-                    //   barrierColor: Get.theme.backgroundColor,
-                    //   context: context,
-                    //   builder: (context) {
-                    //     return Padding(
-                    //       padding: MediaQuery.of(context).viewInsets,
-                    //       child: const ChooseStatusSheet(),
-                    //     );
-                    //   },
-                    // );
+                    controller.selectStatus();
                   },
                 ),
                 Row(
