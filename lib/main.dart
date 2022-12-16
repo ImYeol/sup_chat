@@ -12,6 +12,7 @@ import 'package:sup_chat/constants/app_route.dart';
 import 'package:sup_chat/constants/app_theme.dart';
 import 'package:sup_chat/firebase_options.dart';
 import 'package:sup_chat/service/knock_service.dart';
+import 'package:sup_chat/service/message_service.dart';
 import 'package:sup_chat/service/status_service.dart';
 import 'package:sup_chat/service/user_service.dart';
 import 'package:sup_chat/ui/friend/add_friend_page.dart';

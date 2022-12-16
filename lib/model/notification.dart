@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 
 class Notification {
-  String title;
-  String? subTitle;
+  final String title;
+  final String subTitle;
   IconData? icon;
 
-  Notification({required this.title, this.subTitle, this.icon});
+  Notification(
+      {required this.title,
+      required this.subTitle,
+      this.icon = Icons.notifications});
 }

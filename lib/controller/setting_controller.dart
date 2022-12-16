@@ -5,7 +5,7 @@ import 'package:sup_chat/constants/app_theme.dart';
 class SettingController extends GetxController {
   final box = GetStorage('settings');
   final _darkMode = false.obs;
-  
+
   bool get isDarkMode => _darkMode.value;
 
   @override
@@ -16,13 +16,13 @@ class SettingController extends GetxController {
 
   @override
   void onReady() {
-    _darkMode.value = box.read('theme')?? false;
+    _darkMode.value = box.read('theme') ?? false;
     super.onReady();
   }
 
   void changeTheme(bool isDarkMode) {
     print('isDarkMode = $isDarkMode');
-    Get.changeTheme(isDarkMode ? AppDarkTheme.theme : AppLightTheme.theme).;
+    Get.changeTheme(isDarkMode ? AppDarkTheme.theme : AppLightTheme.theme);
     _darkMode.value = isDarkMode;
     update();
     box.write('theme', isDarkMode);

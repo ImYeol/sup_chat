@@ -70,14 +70,7 @@ class FriendTabView extends StatelessWidget {
 
   Widget buildGroupKnockButton() {
     return ButtonWrapper(
-      onPressed: () {
-        // final uid = Get.find<UserService>().currentUser!.uid;
-        // Get.find<StatusService>().create('5da55', {
-        //   'statusType': StatusType.INVALID.index,
-        //   'name': '',
-        //   'comment': ''
-        // }).then((value) => print('done'));
-      },
+      onPressed: () => controller.sendGroupKnock(controller.friends),
       text: '그룹 노크',
       icon: const Icon(
         Icons.send,

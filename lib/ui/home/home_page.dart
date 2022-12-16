@@ -156,7 +156,7 @@ class HomePage extends GetView<HomeController> {
                   buttonSize: 80,
                   fillColor: Get.theme.colorScheme.tertiary,
                   icon: Icon(
-                    Icons.directions_bike,
+                    mapStatusTypeToIcon[userStatus.statusType],
                     color: Get.theme.iconTheme.color,
                     size: 50,
                   ),
