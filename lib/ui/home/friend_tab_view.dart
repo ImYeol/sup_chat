@@ -28,7 +28,7 @@ class FriendTabView extends StatelessWidget {
 
   Widget buildFriendListView(Map<String, UserStatus> friendStatusMap) {
     final friendStatusList = friendStatusMap.values.toList();
-    print("friends size = ${friendStatusList.length}");
+    print("buildFriendListView friends size = ${friendStatusList.length}");
     return Padding(
       padding: const EdgeInsetsDirectional.fromSTEB(5, 10, 5, 0),
       child: GridView.builder(
@@ -40,19 +40,18 @@ class FriendTabView extends StatelessWidget {
           ),
           scrollDirection: Axis.vertical,
           itemCount: friendStatusList.length,
-          itemBuilder: (context, index) => InkWell(
+          itemBuilder: (context, index) => UserStatusCard(
+                icon: UserStatusIcon(
+                    iconData: mapStatusTypeToIcon[
+                            friendStatusList[index].statusType] ??
+                        Icons.insert_emoticon_outlined),
+                displayText: friendStatusList[index].name,
+                statusText:
+                    mapStatusTypeToString[friendStatusList[index].statusType] ??
+                        '초기상태',
+                labelText: friendStatusList[index].comment ?? '',
                 onDoubleTap: () =>
                     controller.sendKnock(friendStatusList[index].name ?? ''),
-                onTap: () => controller.confirmFriendStatus(),
-                onLongPress: () => controller.selectFriendsForGroupKnock(),
-                child: UserStatusCard(
-                  icon: UserStatusIcon(iconData: Icons.directions_bike_rounded),
-                  displayText: friendStatusList[index].name,
-                  statusText: mapStatusTypeToString[
-                          friendStatusList[index].statusType] ??
-                      '초기상태',
-                  labelText: friendStatusList[index].comment ?? '',
-                ),
               )),
     );
   }

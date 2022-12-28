@@ -23,17 +23,20 @@ class RegisterTabView extends StatelessWidget {
                 LoginOutlinedFormField(
                     labelText: 'Email Address',
                     hintText: '이메일을 입력해주세요',
+                    maxLen: 25,
                     validator: controller.emailValidator,
                     onSaved: (value) => controller.email = value),
                 LoginOutlinedFormField(
                   labelText: 'Name',
                   hintText: '닉네임을 입력해주세요',
+                  maxLen: 10,
                   validator: controller.nameValidator,
                   onSaved: (value) => controller.name = value,
                 ),
                 LoginOutlinedFormField(
                   labelText: 'Password',
                   hintText: '암호를 입력해주세요',
+                  maxLen: 15,
                   validator: controller.passwordValidator,
                   onSaved: (value) => controller.password = value,
                   onChanged: (value) => controller.password = value,
@@ -41,6 +44,7 @@ class RegisterTabView extends StatelessWidget {
                 LoginOutlinedFormField(
                     labelText: 'Confirm Password',
                     hintText: '암호를 입력해주세요',
+                    maxLen: 15,
                     validator: controller.confirmValidator),
                 buildSignInButton(context),
               ],
@@ -53,7 +57,13 @@ class RegisterTabView extends StatelessWidget {
     return Padding(
       padding: EdgeInsetsDirectional.fromSTEB(0, 24, 0, 0),
       child: ButtonWrapper(
-        onPressed: () => controller.signUp(),
+        onPressed: () {
+          FocusScopeNode currentFocus = FocusScope.of(context);
+          if (!currentFocus.hasPrimaryFocus) {
+            currentFocus.unfocus();
+          }
+          controller.signUp();
+        },
         text: 'SignUp',
         options: ButtonWrapperOption(
           width: 230,

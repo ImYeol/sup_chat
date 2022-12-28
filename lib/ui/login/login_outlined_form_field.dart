@@ -4,6 +4,7 @@ class LoginOutlinedFormField extends StatelessWidget {
   final EdgeInsetsGeometry? padding;
   final String labelText;
   final String hintText;
+  final int maxLen;
   final String? Function(String?)? validator;
   final void Function(String?)? onSaved;
   final void Function(String?)? onChanged;
@@ -13,6 +14,7 @@ class LoginOutlinedFormField extends StatelessWidget {
       this.padding,
       required this.labelText,
       required this.hintText,
+      this.maxLen = 20,
       this.validator,
       this.onSaved,
       this.onChanged})
@@ -25,6 +27,7 @@ class LoginOutlinedFormField extends StatelessWidget {
       child: TextFormField(
         //controller: emailAddressLoginController,
         obscureText: false,
+        maxLength: maxLen,
         decoration: InputDecoration(
           labelText: labelText,
           labelStyle: Theme.of(context).textTheme.labelSmall,

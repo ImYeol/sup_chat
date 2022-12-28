@@ -6,11 +6,11 @@ import 'package:sup_chat/constants/app_route.dart';
 import 'package:sup_chat/model/status.dart';
 import 'package:sup_chat/model/user_model.dart';
 import 'package:sup_chat/model/user_status.dart';
-import 'package:sup_chat/service/status_service.dart';
 import 'package:sup_chat/service/user_service.dart';
 
 class LoginController extends GetxController {
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  final userService = Get.find<UserService>();
 
   final loginFormKey = GlobalKey<FormState>();
   // final emailController = TextEditingController();
@@ -26,10 +26,12 @@ class LoginController extends GetxController {
   String? email;
   String? name;
   String? password;
+  Worker? _worker;
 
   @override
   void onInit() {
     print("LoginController onInit");
+    observeUserAuthChanged();
     super.onInit();
   }
 
@@ -64,7 +66,7 @@ class LoginController extends GetxController {
     else if (value == null)
       return '이름을 입력해주세요';
     else
-      return '잘못된 이름 형식입니다';
+      return '이름은 영문과 숫자 조합입니다';
   }
 
   String? passwordValidator(String? value) {
@@ -102,25 +104,35 @@ class LoginController extends GetxController {
         print("updateDisplayName");
         final trimedName = name!.trim();
         await firebaseUser.updateDisplayName(trimedName);
+        // status
+        final status = UserStatus(name: name, statusType: StatusType.INVALID);
+        status.create(firebaseUser.uid).then((_) {
+          print('create user status');
+        }, onError: (e) {
+          print('status create error : $e');
+        });
+        // user model
         await UserModel().update({
           'uid': firebaseUser.uid,
           'name': trimedName,
           'createdAt': Timestamp.now()
         });
-        final status = UserStatus(name: name, statusType: StatusType.INVALID);
-        status.create(firebaseUser.uid).then((_) {
-          print('create user status');
-          Get.offNamed(AppRoute.HOME);
-        }, onError: (e) {
-          print('status create error : $e');
-        });
       }
     } catch (e) {
       Get.snackbar("About Account", "Account message",
+          colorText: Colors.white,
           snackPosition: SnackPosition.BOTTOM,
           titleText:
               Text("Account creation failed", style: Get.textTheme.labelMedium),
-          messageText: Text(e.toString(), style: Get.textTheme.labelSmall));
+          messageText: Text(e.toString(), style: Get.textTheme.labelSmall),
+          isDismissible: true,
+          borderRadius: 0,
+          margin: const EdgeInsets.all(0),
+          backgroundColor: Colors.deepPurple,
+          progressIndicatorBackgroundColor: Colors.black26,
+          barBlur: 80.0,
+          forwardAnimationCurve: Curves.easeInSine,
+          reverseAnimationCurve: Curves.easeInOutCubic);
       print('signup error: ${e.toString()}');
     }
   }
@@ -136,19 +148,54 @@ class LoginController extends GetxController {
     try {
       await _auth.signInWithEmailAndPassword(
           email: email!.trim(), password: password!.trim());
-      Get.offNamed(AppRoute.HOME);
     } catch (e) {
       Get.snackbar("About Login", "Login message",
+          colorText: Colors.white,
           snackPosition: SnackPosition.BOTTOM,
           titleText: Text("Login failed", style: Get.textTheme.labelMedium),
-          messageText: Text(e.toString(), style: Get.textTheme.labelSmall));
+          messageText: Text(e.toString(), style: Get.textTheme.labelSmall),
+          isDismissible: true,
+          borderRadius: 0,
+          margin: const EdgeInsets.all(0),
+          backgroundColor: Colors.deepPurple,
+          progressIndicatorBackgroundColor: Colors.black26,
+          barBlur: 80.0,
+          forwardAnimationCurve: Curves.easeInSine,
+          reverseAnimationCurve: Curves.easeInOutCubic);
     }
   }
 
-  void logOut() async {
-    // emailController.clear();
-    // passwordController.clear();
-    // passwordConfirmController.clear();
-    await _auth.signOut();
+  void observeUserAuthChanged() {
+    _worker = ever(userService.currentUser, (user) {
+      if (user.name != '') {
+        print("observeUserAuthChanged $user");
+        _worker?.dispose();
+        Get.snackbar(
+          '로그인',
+          '로그인 성공',
+          colorText: Colors.white,
+          icon: const Icon(
+            Icons.check_circle,
+            color: Colors.white,
+          ),
+          isDismissible: true,
+          borderRadius: 0,
+          margin: const EdgeInsets.all(0),
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.deepPurple,
+          progressIndicatorBackgroundColor: Colors.black26,
+          barBlur: 80.0,
+          forwardAnimationCurve: Curves.bounceIn,
+          reverseAnimationCurve: Curves.easeInOutCubic,
+          snackbarStatus: (status) {
+            if (status == SnackbarStatus.CLOSING) {
+              print("login snackbar closing");
+              Get.offNamed(AppRoute.HOME);
+            }
+          },
+        );
+        //Get.offNamed(AppRoute.HOME);
+      }
+    });
   }
 }

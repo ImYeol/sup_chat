@@ -1,10 +1,13 @@
+import 'dart:async';
+
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:sup_chat/component/choose_status_sheet.dart';
 import 'package:sup_chat/constants/app_route.dart';
 import 'package:sup_chat/model/knock.dart';
 import 'package:sup_chat/model/message.dart';
-import 'package:sup_chat/model/notification.dart';
+import 'package:sup_chat/model/notification_model.dart';
 import 'package:sup_chat/model/status.dart';
 import 'package:sup_chat/model/user_model.dart';
 import 'package:sup_chat/model/user_status.dart';
@@ -18,32 +21,70 @@ class HomeController extends GetxController {
   final statusRepository = Get.find<StatusService>();
   final messageRepository = MessageService.instance;
 
+  StreamSubscription? friendsSubscription;
+  StreamSubscription? messageSubscription;
+
   UserModel get currentUser => userRepository.currentUser.value;
   final _currentUserStatus = UserStatus().obs;
-  final _notifications = <Notification>[].obs;
+  final _notifications = <NotificationModel>[].obs;
   List<UserModel> get friends => userRepository.friends;
   UserStatus get currentUserStatus => _currentUserStatus.value;
   Map<String, UserStatus> get friendStatusMap => statusRepository.userStatusMap;
 
-  List<Notification> get notifications => _notifications;
+  List<NotificationModel> get notifications => _notifications;
 
   void sendKnock(String friendName) {
     // Get.find<KnockService>().send(Knock(
     //     fromUid: currentUser.uid,
     //     toUid: friend.uid,
     //     updatedAt: DateTime.now()));
-    messageRepository.sendPushMessage(
-        messageRepository.token, KnockMessageModel(fromName: currentUser.name));
+    final friend = friends.firstWhere((user) => user.name == friendName);
+    messageRepository
+        .sendPushMessage(
+            friend.token, KnockMessageModel(fromName: currentUser.name))
+        .then((value) => Get.snackbar('노크노크', '$friendName님에게 노크를 보냈습니다',
+            colorText: Colors.white,
+            icon: const Icon(
+              Icons.send_rounded,
+              color: Colors.white,
+            ),
+            isDismissible: true,
+            borderRadius: 0,
+            margin: const EdgeInsets.all(0),
+            snackPosition: SnackPosition.BOTTOM,
+            backgroundColor: Colors.deepPurple,
+            progressIndicatorBackgroundColor: Colors.black26,
+            barBlur: 80.0,
+            forwardAnimationCurve: Curves.easeInSine,
+            reverseAnimationCurve: Curves.easeInOutCubic));
   }
 
   void sendGroupKnock(List<UserModel> friends) {
-    Future.delayed(
-      const Duration(seconds: 2),
-      () {
-        messageRepository.sendPushMessage(messageRepository.token,
-            KnockMessageModel(fromName: currentUser.name));
-      },
-    );
+    Get.snackbar('test snackbar', 'message',
+        colorText: Colors.white,
+        icon: const Icon(
+          Icons.send_rounded,
+          color: Colors.white,
+        ),
+        isDismissible: true,
+        borderRadius: 0,
+        margin: const EdgeInsets.all(0),
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.deepPurple,
+        progressIndicatorBackgroundColor: Colors.black26,
+        barBlur: 80.0,
+        forwardAnimationCurve: Curves.bounceIn,
+        reverseAnimationCurve: Curves.easeInOutCubic, snackbarStatus: (status) {
+      if (status == SnackbarStatus.CLOSED) {
+        print("login snackbar closed");
+        //Get.offNamed(AppRoute.HOME);
+      } else if (status == SnackbarStatus.OPEN) {
+        print("login snackbar open");
+      } else if (status == SnackbarStatus.CLOSING) {
+        print("login snackbar closing");
+        Get.closeCurrentSnackbar();
+      }
+    });
   }
 
   void addFriendIfResultExist() async {
@@ -85,28 +126,44 @@ class HomeController extends GetxController {
     var messages = messageRepository.readAll();
     var newMessages = messages.map((message) {
       String title = message.fromName ?? '';
+      print("onMessageUpdated : $message");
       if (message.type == MessageType.knock) {
-        return Notification(title: title, subTitle: '$title님께서 노크 하였습니다');
+        return NotificationModel(
+            title: title,
+            subTitle: '$title님께서 노크 하였습니다',
+            createdAt: message.createdAt ?? DateTime.now());
       } else {
-        return Notification(title: title, subTitle: '$title님께서 친구 요청 하였습니다');
+        return NotificationModel(
+            title: title,
+            subTitle: '$title님께서 친구 요청 하였습니다',
+            createdAt: message.createdAt ?? DateTime.now());
       }
     }).toList();
     _notifications.value = newMessages;
   }
 
-  void updateUserStatus(UserModel? user, {UserStatus? status}) async {
-    print("updateUserStatus : user= $user");
+  void onMessageDeleted(NotificationModel notification) {
+    print(
+        "onMessageDeleted = key: ${notification.createdAt} message: $notification");
+    messageRepository.remove(notification.createdAt.toString());
+    //_notifications.remove(notification);
+  }
+
+  Future<void> updateUserStatus(UserModel? user, {UserStatus? status}) async {
+    print("updateUserStatus1 : user= $user");
     if (user == null) {
       print('user is null');
       return;
     }
     final userStatus = status ?? await statusRepository.read(user.uid);
-    print("updateUserStatus : status= $userStatus");
+    print("updateUserStatus2 : status= $userStatus");
     if (user.uid != currentUser.uid) {
+      print("updateUserStatus3 : user update");
       statusRepository.observeUserStatusRef(user.uid);
       statusRepository.update(user.uid, userStatus, useCache: true);
       statusRepository.userStatusMap.refresh();
     } else {
+      print("updateUserStatus3 : current user update");
       _currentUserStatus.value = userStatus;
     }
   }
@@ -114,8 +171,24 @@ class HomeController extends GetxController {
   @override
   void onInit() {
     print("home_controller onInit");
-    Get.find<UserService>().init();
+    //Get.find<UserService>().init();
     MessageService.instance.init();
+    userRepository.init();
+    // once(userRepository.friends, (friendList) async {
+    //   print("friends changed ${friendList.length}");
+    //   statusRepository.unobserveUserStatusRef();
+    //   for (int i = 0; i < friendList.length; i++) {
+    //     await updateUserStatus(friendList[i]);
+    //   }
+    // });
+    friendsSubscription = userRepository.friends.listen((friendList) async {
+      print("friends changed ${friendList.length}");
+      statusRepository.unobserveUserStatusRef();
+      for (int i = 0; i < friendList.length; i++) {
+        await updateUserStatus(friendList[i]);
+      }
+    });
+    MessageService.instance.box.listen(() => onMessageUpdated());
     super.onInit();
   }
 
@@ -123,20 +196,18 @@ class HomeController extends GetxController {
   void onReady() {
     print("home_controller onReady");
     // update friends and status
-    once(userRepository.currentUser, (user) => updateUserStatus(user));
-    ever(userRepository.friends, (friendList) {
-      print("friends changed $friendList");
-      statusRepository.unobserveUserStatusRef();
-      friendList.forEach(updateUserStatus);
-    });
-    MessageService.instance.box.listen(() => onMessageUpdated());
-    Get.find<KnockService>().box.listen(() => onKnockReceived());
+    //once(userRepository.currentUser, (user) => updateUserStatus(user));
+    updateUserStatus(userRepository.currentUser.value);
+    userRepository.loadFriends();
     super.onReady();
   }
 
   @override
   void onClose() {
     print("home_controller onClose");
+    statusRepository.clear();
+    userRepository.clear();
+    friendsSubscription?.cancel();
     super.onClose();
   }
 }

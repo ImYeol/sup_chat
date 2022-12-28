@@ -11,9 +11,10 @@ import 'package:sup_chat/bindings/setting_binding.dart';
 import 'package:sup_chat/constants/app_route.dart';
 import 'package:sup_chat/constants/app_theme.dart';
 import 'package:sup_chat/firebase_options.dart';
+import 'package:sup_chat/middleware/auth_guard.dart';
 import 'package:sup_chat/service/knock_service.dart';
-import 'package:sup_chat/service/message_service.dart';
 import 'package:sup_chat/service/status_service.dart';
+import 'package:sup_chat/service/theme_service.dart';
 import 'package:sup_chat/service/user_service.dart';
 import 'package:sup_chat/ui/friend/add_friend_page.dart';
 import 'package:sup_chat/ui/home/home_page.dart';
@@ -22,7 +23,7 @@ import 'package:sup_chat/ui/setting/setting_page.dart';
 import 'package:flutter/foundation.dart' show defaultTargetPlatform, kIsWeb;
 
 // Change to false to use live database instance.
-const USE_DATABASE_EMULATOR = true;
+const USE_DATABASE_EMULATOR = false;
 // The port we've set the Firebase Database emulator to run on via the
 // `firebase.json` configuration file.
 const emulatorPort = 9000;
@@ -37,7 +38,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
-  ).then((value) => initServices());
+  );
 
   if (USE_DATABASE_EMULATOR) {
     try {
@@ -50,13 +51,16 @@ void main() async {
     }
   }
 
+  await initServices();
+  await Get.find<ThemeService>().initStorage();
+
   runApp(const MyApp());
 }
 
-void initServices() {
+Future<void> initServices() async {
   Get.put(UserService());
   Get.put(StatusService());
-  Get.put(KnockService());
+  Get.put(ThemeService());
 }
 
 class MyApp extends StatelessWidget {
@@ -65,18 +69,21 @@ class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    final isLoggedIn = FirebaseAuth.instance.currentUser != null;
+    //final isLoggedIn = FirebaseAuth.instance.currentUser != null;
     //FlutterNativeSplash.remove();
+    print("build theme: ${Get.find<ThemeService>().theme}");
     return GetMaterialApp(
+      themeMode: Get.find<ThemeService>().theme,
       theme: AppLightTheme.theme,
       darkTheme: AppDarkTheme.theme,
-      initialRoute: isLoggedIn ? AppRoute.HOME : AppRoute.LOGIN,
-      initialBinding: isLoggedIn ? HomeBinding() : LoginBinding(),
+      initialRoute: AppRoute.HOME,
+      initialBinding: HomeBinding(),
       getPages: [
         GetPage(
             name: AppRoute.HOME,
             page: () => const HomePage(),
-            binding: HomeBinding()),
+            binding: HomeBinding(),
+            middlewares: [AuthGuard()]),
         GetPage(
             name: AppRoute.LOGIN,
             page: () => const LoginPage(),

@@ -9,6 +9,7 @@ class NotificationCard extends StatelessWidget {
   Border? border;
   NotificationIcon? icon;
   NotificationText text;
+  DateTime createdAt;
 
   NotificationCard(
       {Key? key,
@@ -16,7 +17,8 @@ class NotificationCard extends StatelessWidget {
       this.backgroundColor,
       this.borderRadius,
       this.icon,
-      required this.text})
+      required this.text,
+      required this.createdAt})
       : super(key: key);
 
   @override
@@ -47,10 +49,26 @@ class NotificationCard extends StatelessWidget {
               Expanded(
                 child: text,
               ),
+              Text(getTimeDifferenceFromNow(createdAt))
             ],
           ),
         ),
       ),
     );
+  }
+
+  String getTimeDifferenceFromNow(DateTime dateTime) {
+    Duration difference = DateTime.now().difference(dateTime);
+    if (difference.inSeconds < 5) {
+      return "Just now";
+    } else if (difference.inMinutes < 1) {
+      return "${difference.inSeconds}s ago";
+    } else if (difference.inHours < 1) {
+      return "${difference.inMinutes}m ago";
+    } else if (difference.inHours < 24) {
+      return "${difference.inHours}h ago";
+    } else {
+      return "${difference.inDays}d ago";
+    }
   }
 }

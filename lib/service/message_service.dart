@@ -63,7 +63,8 @@ Future<void> onTerminatedMessage(RemoteMessage message) async {
   // save message locally
   final data = MessageModel(
       fromName: message.data['from_name'],
-      type: MessageType.values[int.parse(message.data['msg_type'])]);
+      type: MessageType.values[int.parse(message.data['msg_type'])],
+      createdAt: DateTime.now());
   MessageService.instance.saveMessage(data);
 }
 
@@ -81,7 +82,7 @@ class MessageService {
     if (FirebaseAuth.instance.currentUser == null) return;
     if (token == null) return;
     final ref = Get.find<UserService>().doc;
-    print('ref; ${ref.path}');
+    print('MessageService _updateToken ref; ${ref.path}');
     await ref.set(
       {
         'device_type': Platform.operatingSystem,
@@ -167,15 +168,31 @@ class MessageService {
       debugPrint(
           'Message also contained a notification: ${message.notification}');
       final noti = message.notification;
-      showLocalNotification(
-          id: 1,
-          title: noti?.title ?? '',
-          body: noti?.body ?? '',
-          payload: 'payload');
+      Get.snackbar(noti?.title ?? '', noti?.body ?? '',
+          colorText: Colors.white,
+          icon: const Icon(
+            Icons.send_rounded,
+            color: Colors.white,
+          ),
+          isDismissible: true,
+          borderRadius: 0,
+          margin: const EdgeInsets.all(0),
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.deepPurple,
+          progressIndicatorBackgroundColor: Colors.black26,
+          barBlur: 80.0,
+          forwardAnimationCurve: Curves.easeInSine,
+          reverseAnimationCurve: Curves.easeInOutCubic);
+      // showLocalNotification(
+      //     id: 1,
+      //     title: noti?.title ?? '',
+      //     body: noti?.body ?? '',
+      //     payload: 'payload');
 
       final data = MessageModel(
           fromName: message.data['from_name'],
-          type: MessageType.values[int.parse(message.data['msg_type'])]);
+          type: MessageType.values[int.parse(message.data['msg_type'])],
+          createdAt: DateTime.now());
       MessageService.instance.saveMessage(data);
     }
   }
@@ -247,9 +264,9 @@ class MessageService {
   }
 
   saveMessage(MessageModel message) {
-    print("saveMessage : ${DateTime.now().toIso8601String()}");
-    box.write(DateTime.now().toIso8601String(), message.toJson());
-    box.save();
+    print("saveMessage : ${message.hashCode}");
+    box.write(message.createdAt.toString(), message.toJson());
+    //box.save();
   }
 
   List<MessageModel> readAll() {
@@ -258,9 +275,13 @@ class MessageService {
     print("keys size $keys");
     for (String key in keys) {
       final message = box.read(key);
-      print('readAll : $message');
-      messages.add(MessageModel.fromJson(message));
+      messages.insert(0, MessageModel.fromJson(message));
     }
     return messages;
+  }
+
+  void remove(String key) {
+    box.remove(key);
+    box.save();
   }
 }

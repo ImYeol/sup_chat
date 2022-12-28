@@ -22,11 +22,13 @@ class LoginTabView extends StatelessWidget {
                 LoginOutlinedFormField(
                     labelText: 'Email Address',
                     hintText: '이메일을 입력해주세요',
+                    maxLen: 25,
                     validator: controller.emailValidator,
                     onSaved: (value) => controller.email = value),
                 LoginOutlinedFormField(
                   labelText: 'Password',
                   hintText: '암호를 입력해주세요',
+                  maxLen: 15,
                   validator: controller.passwordValidator,
                   onSaved: (value) => controller.password = value,
                 ),
@@ -42,7 +44,13 @@ class LoginTabView extends StatelessWidget {
     return Padding(
       padding: EdgeInsetsDirectional.fromSTEB(0, 24, 0, 0),
       child: ButtonWrapper(
-        onPressed: () => controller.logIn(),
+        onPressed: () {
+          FocusScopeNode currentFocus = FocusScope.of(context);
+          if (!currentFocus.hasPrimaryFocus) {
+            currentFocus.unfocus();
+          }
+          controller.logIn();
+        },
         text: 'Login',
         options: ButtonWrapperOption(
           width: 230,

@@ -16,6 +16,7 @@ class StatusSelectionSheet extends StatefulWidget {
 }
 
 class _StatusSelectionSheetState extends State<StatusSelectionSheet> {
+  final maxCommentLen = 8;
   final TextEditingController textController = TextEditingController();
   late StatusType newStatusType;
 
@@ -72,6 +73,7 @@ class _StatusSelectionSheetState extends State<StatusSelectionSheet> {
                 controller: textController,
                 autofocus: true,
                 obscureText: false,
+                maxLength: maxCommentLen,
                 decoration: InputDecoration(
                   hintText: '상태 메시지를 입력해주세요',
                   hintStyle: Theme.of(context).textTheme.labelMedium,

@@ -72,4 +72,9 @@ class StatusService extends GetxService {
   Future<void> delete(String uid) {
     return databaseReference.child(uid).remove();
   }
+
+  void clear() {
+    unobserveUserStatusRef();
+    userStatusMap.clear();
+  }
 }
