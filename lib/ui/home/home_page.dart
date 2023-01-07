@@ -21,8 +21,12 @@ class HomePage extends GetView<HomeController> {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             buildMenuBar(),
-            Obx(() => buildTtitle(controller.currentUserStatus)),
-            Obx(() => buildStatusView(controller.currentUserStatus)),
+            Obx(() => buildTtitle(
+                controller.userStatusMap[controller.currentUser.uid] ??
+                    UserStatus())),
+            Obx(() => buildStatusView(
+                controller.userStatusMap[controller.currentUser.uid] ??
+                    UserStatus())),
             Expanded(
               child: Padding(
                 padding: const EdgeInsetsDirectional.fromSTEB(15, 15, 15, 15),

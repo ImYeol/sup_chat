@@ -6,7 +6,7 @@ import 'package:sup_chat/model/user_status.dart';
 class StatusService extends GetxService {
   final databaseReference = FirebaseDatabase.instance.ref('state');
   final userStatusMap = <String, UserStatus>{}.obs;
-  final _subscriptionMap = <StreamSubscription>[];
+  final _subscriptionMap = <String, StreamSubscription>{};
 
   void onUserStatusChanged(DatabaseEvent event) {
     print(
@@ -26,15 +26,14 @@ class StatusService extends GetxService {
           onError: (error) =>
               print("observeUserStatusRef subscription onError $error"),
           cancelOnError: true);
-      _subscriptionMap.add(streamSubscription);
+      _subscriptionMap[uid] = streamSubscription;
     } catch (e) {
       print("observeUserStatusRef : $e");
     }
   }
 
-  void unobserveUserStatusRef() {
-    _subscriptionMap.map((subscription) => subscription.cancel());
-    _subscriptionMap.clear();
+  void unobserveUserStatusRef(String uid) {
+    _subscriptionMap[uid]?.cancel();
   }
 
   Future<void> create(String uid, UserStatus status) {
@@ -73,8 +72,13 @@ class StatusService extends GetxService {
     return databaseReference.child(uid).remove();
   }
 
-  void clear() {
-    unobserveUserStatusRef();
+  @override
+  void onClose() {
+    _subscriptionMap.forEach((key, value) {
+      value.cancel();
+    });
+    _subscriptionMap.clear();
     userStatusMap.clear();
+    super.onClose();
   }
 }

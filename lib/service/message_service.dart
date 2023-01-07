@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -10,6 +11,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:sup_chat/constants/app_setting.dart';
+import 'package:sup_chat/model/fcm_token.dart';
 import 'package:sup_chat/model/message.dart';
 import 'package:sup_chat/service/user_service.dart';
 import 'package:http/http.dart' as http;
@@ -74,22 +76,26 @@ class MessageService {
   final _token = ''.obs;
   GetStorage box = GetStorage('messages');
   static final instance = MessageService._();
+  Worker? updateTokenWorker;
+  StreamSubscription? authChangeSubscription;
+  String uid = '';
+
+  CollectionReference get col =>
+      FirebaseFirestore.instance.collection('tokens');
+  Map<String, FCMTokenModel> tokens = <String, FCMTokenModel>{};
+  Map<String, StreamSubscription> subscriptions =
+      <String, StreamSubscription>{};
 
   String get token => _token.value;
 
   /// `/users/<uid>/fcm_tokens/<docId>` 에 저장을 한다.
-  _updateToken(String? token) async {
-    if (FirebaseAuth.instance.currentUser == null) return;
-    if (token == null) return;
-    final ref = Get.find<UserService>().doc;
+  _updateToken(String newToken, String uid) async {
+    final ref = col.doc(uid);
     print('MessageService _updateToken ref; ${ref.path}');
-    await ref.set(
-      {
-        'device_type': Platform.operatingSystem,
-        'fcm_token': token,
-      },
-      SetOptions(merge: true),
-    );
+    final newTokenModel =
+        FCMTokenModel(token: newToken, deviceType: Platform.operatingSystem);
+    await ref.set(newTokenModel.toJson(), SetOptions(merge: true));
+    tokens[uid] = newTokenModel;
   }
 
   /// Initialize Messaging
@@ -98,11 +104,21 @@ class MessageService {
     /// `/fcm_tokens/<docId>/{token: '...', uid: '...'}`
     /// Save(or update) token
     ///
-    FirebaseAuth.instance
-        .authStateChanges()
-        .listen((user) => _updateToken(token));
+    clear();
+    authChangeSubscription =
+        FirebaseAuth.instance.authStateChanges().listen((user) {
+      // reset token if logout
+      print("MessageService authStateChanged $user");
+      if (user == null) {
+        _token.value = '';
+        uid = '';
+      } else {
+        uid = user.uid;
+      }
+    });
+    print("authChangeSubscription registered");
 
-    ever(_token, (callback) => _updateToken(token));
+    updateTokenWorker = ever(_token, (callback) => _updateToken(token, uid));
 
     /// Permission request for iOS only. For Android, the permission is granted by default.
 
@@ -247,7 +263,9 @@ class MessageService {
       print('Unable to send FCM message, no token exists.');
       return;
     }
-    print("sendPushMessage $targetToken");
+    if (targetToken.isEmpty) {
+      showNotificationError('remote token is empty');
+    }
     try {
       await http.post(
         Uri.parse('https://fcm.googleapis.com/fcm/send'),
@@ -259,14 +277,51 @@ class MessageService {
       );
       print('FCM request for device sent!');
     } catch (e) {
-      print(e);
+      showNotificationError(e.toString());
     }
+  }
+
+  void showNotificationError(String message) {
+    Get.snackbar('알림 보내기 에러', message,
+        colorText: Colors.white,
+        icon: const Icon(
+          Icons.send_rounded,
+          color: Colors.white,
+        ),
+        isDismissible: true,
+        borderRadius: 0,
+        margin: const EdgeInsets.all(0),
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.deepPurple,
+        progressIndicatorBackgroundColor: Colors.black26,
+        barBlur: 80.0,
+        forwardAnimationCurve: Curves.easeInSine,
+        reverseAnimationCurve: Curves.easeInOutCubic);
   }
 
   saveMessage(MessageModel message) {
     print("saveMessage : ${message.hashCode}");
     box.write(message.createdAt.toString(), message.toJson());
     //box.save();
+  }
+
+  void observeFcmTokenState(String uid) {
+    subscriptions[uid]?.cancel();
+    subscriptions[uid] =
+        col.doc(uid).snapshots().listen((DocumentSnapshot snapshot) async {
+      if (snapshot.exists == false) {
+        // log('---> User document not exits in observeUserDoc.');
+        print('---> token document not exits in observeFcmTokenState');
+        return;
+      }
+      tokens[uid] = FCMTokenModel.fromJson(snapshot.data() as dynamic);
+    });
+  }
+
+  void unobserveFcmTokenState(String uid) {
+    subscriptions[uid]?.cancel();
+    subscriptions.remove(uid);
+    tokens.remove(uid);
   }
 
   List<MessageModel> readAll() {
@@ -283,5 +338,10 @@ class MessageService {
   void remove(String key) {
     box.remove(key);
     box.save();
+  }
+
+  void clear() {
+    updateTokenWorker?.dispose();
+    authChangeSubscription?.cancel();
   }
 }

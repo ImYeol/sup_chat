@@ -170,30 +170,31 @@ class LoginController extends GetxController {
       if (user.name != '') {
         print("observeUserAuthChanged $user");
         _worker?.dispose();
-        Get.snackbar(
-          '로그인',
-          '로그인 성공',
-          colorText: Colors.white,
-          icon: const Icon(
-            Icons.check_circle,
-            color: Colors.white,
-          ),
-          isDismissible: true,
-          borderRadius: 0,
-          margin: const EdgeInsets.all(0),
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.deepPurple,
-          progressIndicatorBackgroundColor: Colors.black26,
-          barBlur: 80.0,
-          forwardAnimationCurve: Curves.bounceIn,
-          reverseAnimationCurve: Curves.easeInOutCubic,
-          snackbarStatus: (status) {
-            if (status == SnackbarStatus.CLOSING) {
-              print("login snackbar closing");
-              Get.offNamed(AppRoute.HOME);
-            }
-          },
-        );
+        Get.offNamed(AppRoute.HOME);
+        // Get.snackbar(
+        //   '로그인',
+        //   '로그인 성공',
+        //   colorText: Colors.white,
+        //   icon: const Icon(
+        //     Icons.check_circle,
+        //     color: Colors.white,
+        //   ),
+        //   isDismissible: true,
+        //   borderRadius: 0,
+        //   margin: const EdgeInsets.all(0),
+        //   snackPosition: SnackPosition.BOTTOM,
+        //   backgroundColor: Colors.deepPurple,
+        //   progressIndicatorBackgroundColor: Colors.black26,
+        //   barBlur: 80.0,
+        //   forwardAnimationCurve: Curves.bounceIn,
+        //   reverseAnimationCurve: Curves.easeInOutCubic,
+        //   snackbarStatus: (status) {
+        //     if (status == SnackbarStatus.CLOSING) {
+        //       print("login snackbar closing");
+        //       Get.offNamed(AppRoute.HOME);
+        //     }
+        //   },
+        // );
         //Get.offNamed(AppRoute.HOME);
       }
     });

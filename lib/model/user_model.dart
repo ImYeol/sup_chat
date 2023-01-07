@@ -1,25 +1,20 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:get/get.dart';
-import 'package:sup_chat/model/friend_request.dart';
+import 'package:sup_chat/model/fcm_token.dart';
 import 'package:sup_chat/service/user_service.dart';
 
 class UserModel {
   String uid = '';
   String name = '';
-  String token = '';
-  int request = FriendRequest.invalid;
   bool exists = false;
   Timestamp? updatedAt;
   Timestamp? createdAt;
-  DocumentReference? friends;
 
   UserModel({
     this.uid = '',
     this.name = '',
-    this.token = '',
     this.exists = false,
-    this.request = FriendRequest.invalid,
     this.updatedAt,
     this.createdAt,
   });
@@ -35,10 +30,6 @@ class UserModel {
 
     name = data['name'] ?? '';
     print("name = $name");
-
-    token = data['fcm_token'] ?? '';
-
-    request = data['request'] ?? FriendRequest.invalid;
 
     /// Some timestamp data (like date from Typesense) is int.
     createdAt = data['createdAt'] is int
@@ -60,7 +51,7 @@ class UserModel {
   }
 
   @override
-  bool operator ==(covariant UserModel other) => name == other.name;
+  bool operator ==(covariant UserModel other) => uid == other.uid;
 
   @override
   int get hashCode => name.hashCode;

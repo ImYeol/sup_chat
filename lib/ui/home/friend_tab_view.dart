@@ -19,7 +19,7 @@ class FriendTabView extends StatelessWidget {
       mainAxisSize: MainAxisSize.max,
       children: [
         Expanded(
-          child: Obx(() => buildFriendListView(controller.friendStatusMap)),
+          child: Obx(() => buildFriendListView(controller.userStatusMap)),
         ),
         buildBottomMenu()
       ],

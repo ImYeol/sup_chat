@@ -4,16 +4,17 @@ import 'package:sup_chat/component/button_wrapper.dart';
 import 'package:sup_chat/component/user_status_card.dart';
 import 'package:sup_chat/component/user_status_icon.dart';
 import 'package:sup_chat/controller/add_friend_controller.dart';
+import 'package:sup_chat/model/friend_model.dart';
 import 'package:sup_chat/model/user_model.dart';
 
 class FriendSearchResult extends StatelessWidget {
-  final UserModel searchResult;
+  final FriendModel searchResult;
   const FriendSearchResult({Key? key, required this.searchResult})
       : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    if (searchResult.createdAt == null) return const NoResult();
+    if (searchResult.uid.isEmpty) return const NoResult();
 
     return Padding(
       padding: const EdgeInsetsDirectional.fromSTEB(15, 0, 15, 0),
@@ -45,7 +46,7 @@ class FriendSearchResult extends StatelessWidget {
                   iconData: Icons.person,
                   iconSize: 32,
                 ),
-                statusText: searchResult.name),
+                statusText: searchResult.name ?? ''),
             const SizedBox(
               height: 10,
             ),

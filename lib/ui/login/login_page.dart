@@ -35,7 +35,7 @@ class LoginPage extends GetView<LoginController> {
       children: [
         Padding(
           padding: EdgeInsets.only(top: 70),
-          child: Text('SupChat',
+          child: Text('Bbeep',
               style: Get.textTheme.titleMedium?.copyWith(fontSize: 58)),
         )
       ],

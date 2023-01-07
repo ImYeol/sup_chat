@@ -3,24 +3,24 @@ import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:get/get.dart';
-import 'package:sup_chat/model/friend_request.dart';
+import 'package:sup_chat/model/friend_model.dart';
 import 'package:sup_chat/model/user_model.dart';
+import 'package:sup_chat/service/message_service.dart';
+import 'package:sup_chat/service/status_service.dart';
 
 class UserService extends GetxService {
   final currentUser = UserModel().obs;
-  final friends = <UserModel>[].obs;
+  final friends = <FriendModel>[].obs;
   StreamSubscription? authDocumentSubscription;
   StreamSubscription? userDocumentSubscription;
   StreamSubscription? friendsDocumentSubscription;
-  StreamSubscription? requestsDocumentSubscription;
 
   CollectionReference get col => FirebaseFirestore.instance.collection('users');
-  //CollectionReference get friendCol => FirebaseFirestore.instance.collection('friends');
   DocumentReference get doc => col.doc(FirebaseAuth.instance.currentUser?.uid);
-  String? get uid => FirebaseAuth.instance.currentUser?.uid;
 
   CollectionReference get friendsCol => doc.collection('friends');
-  CollectionReference get requestsCol => doc.collection('requests');
+
+  String? get uid => FirebaseAuth.instance.currentUser?.uid;
 
   void init() {
     authDocumentSubscription =
@@ -28,13 +28,15 @@ class UserService extends GetxService {
       if (firebaseUser == null) {
         print("authStateChanges - firebaseUser is null");
         unobserveUserDoc();
-        //friends.clear();
+        unobserveFriendCollection();
+        friends.clear();
         // if (Get.currentRoute != AppRoute.LOGIN) {
         //   Get.offAllNamed(AppRoute.LOGIN);
         // }
       } else {
         print("authStateChanges - user is ${firebaseUser.displayName}");
         observeUserDoc();
+        observeFriendsCollection();
         //loadFriends();
       }
     });
@@ -50,6 +52,7 @@ class UserService extends GetxService {
   @override
   void onClose() {
     print("UserService onClose");
+    authDocumentSubscription?.cancel();
     super.onClose();
   }
 
@@ -61,65 +64,125 @@ class UserService extends GetxService {
     return UserModel.fromSnapshot(snapshot);
   }
 
-  Future<UserModel> getUserByName(String name, {useCache = true}) async {
+  Future<FriendModel?> searchFriendByName(String name,
+      {useCache = true}) async {
     if (useCache) {
-      return friends.where((friend) => friend.name == name).first;
+      return friends[friends.indexWhere((element) => element.name == name)];
     }
     final snapshot = await col.where('name', isEqualTo: name).get();
     final user = snapshot.docs.isNotEmpty
         ? snapshot.docs.map((doc) => UserModel.fromSnapshot(doc)).first
         : UserModel();
     print("getUserByName : $user");
-    return user;
+    return FriendModel.fromUserModel(user);
   }
 
-  void loadFriends() async {
-    print(
-        "loadFriends ${FirebaseAuth.instance.currentUser?.displayName}, $currentUser");
-    final snapshot = await friendsCol.get();
-    if (snapshot.docs.isNotEmpty) {
-      // friends.assignAll(
-      //     snapshot.docs.map((doc) => UserModel.fromSnapshot(doc)).toList());
-      friends.value =
-          snapshot.docs.map((doc) => UserModel.fromSnapshot(doc)).toList();
-    }
-  }
-
-  Future<void> sendFriendRequest(UserModel to) async {
-    await col.doc(to.uid).set(
-        FriendRequest(name: currentUser.value.name, createdAt: Timestamp.now())
+  Future<void> sendFriendRequest(String toUid, String toName) async {
+    WriteBatch batch = FirebaseFirestore.instance.batch();
+    batch.set(
+        col
+            .doc(FirebaseAuth.instance.currentUser?.uid)
+            .collection('friends')
+            .doc(toUid),
+        FriendModel(uid: toUid, name: toName, state: FriendState.pending)
             .toJson());
-    await friendsCol.doc(to.uid).set({
-      'name': to.name,
-      'request': FriendRequest.pending,
-      'createdAt': Timestamp.now()
-    });
+    batch.set(
+        col
+            .doc(toUid)
+            .collection('friends')
+            .doc(FirebaseAuth.instance.currentUser?.uid),
+        FriendModel(
+                uid: currentUser.value.uid,
+                name: currentUser.value.name,
+                state: FriendState.request)
+            .toJson());
+    return batch.commit().then((value) => null);
   }
 
-  Future<void> addFriend(UserModel friend) async {
-    if (friend.uid == currentUser.value.uid) {
+  Future<void> acceptFriendReqeust(String toUid) async {
+    WriteBatch batch = FirebaseFirestore.instance.batch();
+    batch.update(
+        col
+            .doc(FirebaseAuth.instance.currentUser?.uid)
+            .collection('friends')
+            .doc(FirebaseAuth.instance.currentUser?.uid),
+        {'state': FriendState.done.index});
+    batch.update(col.doc(toUid).collection('friends').doc(toUid),
+        {'state': FriendState.done.index});
+    return batch.commit();
+  }
+
+  Future<void> deleteFriend(String toUid) async {
+    if (toUid == currentUser.value.uid) {
       print("friend is current user");
       return;
     }
-    await friendsCol.doc(friend.uid).set({
-      'name': friend.name,
-      'fcm_token': friend.token,
-      'createdAt': Timestamp.now()
-    });
-    if (friends.contains(friend) == false) {
-      print("add friend : $friend");
-      friends.add(friend);
-      //friends.refresh();
+    WriteBatch batch = FirebaseFirestore.instance.batch();
+    batch.delete(col
+        .doc(FirebaseAuth.instance.currentUser?.uid)
+        .collection('friends')
+        .doc(FirebaseAuth.instance.currentUser?.uid));
+    batch.delete(col.doc(toUid).collection('friends').doc(toUid));
+    return batch.commit();
+  }
+
+  void onFriendAdded(FriendModel friend) {
+    print("onFriendAdded: $friend");
+    if (friend.state == FriendState.done) {
+      MessageService.instance.observeFcmTokenState(friend.uid);
+      Get.find<StatusService>().observeUserStatusRef(friend.uid);
+    }
+    friends.add(friend);
+  }
+
+  void onFriendUpdated(FriendModel friend) {
+    print("onFriendUpdated: $friend");
+    final position = friends.indexOf(friend);
+    if (position != -1) {
+      if (friends[position].state != FriendState.done &&
+          friend.state == FriendState.done) {
+        MessageService.instance.observeFcmTokenState(friend.uid);
+        Get.find<StatusService>().observeUserStatusRef(friend.uid);
+      }
+      friends[position] = friend;
     }
   }
 
-  Future<void> deleteFriend(UserModel friend) async {
-    if (friend.uid == currentUser.value.uid) {
-      print("friend is current user");
-      return;
+  void onFriendDeleted(FriendModel friend) {
+    print("onFriendDeleted: $friend");
+    if (friend.state == FriendState.done) {
+      MessageService.instance.unobserveFcmTokenState(friend.uid);
+      Get.find<StatusService>().unobserveUserStatusRef(friend.uid);
     }
-    await friendsCol.doc(friend.uid).delete();
     friends.remove(friend);
+  }
+
+  void observeFriendsCollection() {
+    print("observeFriendsCollection");
+    friendsDocumentSubscription?.cancel();
+    friendsDocumentSubscription = friendsCol.snapshots().listen((event) {
+      print("observeFriendsCollection listen ${event.docChanges.length}");
+      for (var change in event.docChanges) {
+        final friend =
+            FriendModel.fromJson(change.doc.id, change.doc.data() as dynamic);
+        switch (change.type) {
+          case DocumentChangeType.added:
+            onFriendAdded(friend);
+            break;
+          case DocumentChangeType.modified:
+            onFriendUpdated(friend);
+            break;
+          case DocumentChangeType.removed:
+            onFriendDeleted(friend);
+            break;
+        }
+      }
+    });
+  }
+
+  void unobserveFriendCollection() {
+    friendsDocumentSubscription?.cancel();
+    friendsDocumentSubscription = null;
   }
 
   void observeUserDoc() {
@@ -136,26 +199,6 @@ class UserService extends GetxService {
       // log('----> observeUserDoc and update event with; $user');
       //userChange.add(user);
       print('----> observeUserDoc and update event with; $currentUser');
-    });
-  }
-
-  void observeFriendsCollection() {
-    print("observeUserDoc");
-    friendsDocumentSubscription =
-        friendsCol.snapshots(includeMetadataChanges: true).listen((event) {
-      friends.value = event.docChanges
-          .map((document) => UserModel.fromSnapshot(document.doc))
-          .toList();
-    });
-  }
-
-  void observeRequestsCollection() {
-    print("observeUserDoc");
-    friendsDocumentSubscription =
-        friendsCol.snapshots(includeMetadataChanges: true).listen((event) {
-      final requests = event.docChanges
-          .map((document) => FriendRequest.fromJson(document.doc as dynamic))
-          .toList();
     });
   }
 
@@ -180,13 +223,5 @@ class UserService extends GetxService {
 
   Future<void> signOut() {
     return FirebaseAuth.instance.signOut();
-  }
-
-  void clear() {
-    friends.clear();
-    //FirebaseAuth.instance.authStateChanges().drain();
-    authDocumentSubscription?.cancel();
-    print(
-        "clear $authDocumentSubscription, ${authDocumentSubscription?.isPaused}");
   }
 }

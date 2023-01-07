@@ -23,7 +23,7 @@ import 'package:sup_chat/ui/setting/setting_page.dart';
 import 'package:flutter/foundation.dart' show defaultTargetPlatform, kIsWeb;
 
 // Change to false to use live database instance.
-const USE_DATABASE_EMULATOR = false;
+const USE_DATABASE_EMULATOR = true;
 // The port we've set the Firebase Database emulator to run on via the
 // `firebase.json` configuration file.
 const emulatorPort = 9000;
