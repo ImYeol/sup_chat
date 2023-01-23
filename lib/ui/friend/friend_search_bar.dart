@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:sup_chat/component/icon_button_wrapper.dart';
+import 'package:sup_chat/controller/add_friend_controller.dart';
 
 class FriendSearchBar extends StatelessWidget {
+  final controller = Get.find<AddFriendController>();
   EdgeInsetsGeometry? padding;
   TextEditingController? textEdittingController;
 
@@ -76,9 +79,8 @@ class FriendSearchBar extends StatelessWidget {
                 color: Theme.of(context).iconTheme.color,
                 size: 24,
               ),
-              onPressed: () {
-                print('IconButton pressed ...');
-              },
+              onPressed: () =>
+                  controller.searchFriend(textEdittingController?.text ?? ''),
             ),
           ),
         ],

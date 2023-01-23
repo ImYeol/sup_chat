@@ -4,6 +4,7 @@ import 'package:sup_chat/component/icon_button_wrapper.dart';
 import 'package:sup_chat/constants/app_route.dart';
 import 'package:sup_chat/controller/home_controller.dart';
 import 'package:sup_chat/model/status.dart';
+import 'package:sup_chat/model/user_status.dart';
 import 'package:sup_chat/ui/home/friend_tab_view.dart';
 import 'package:sup_chat/ui/home/notification_tab_view.dart';
 
@@ -13,15 +14,19 @@ class HomePage extends GetView<HomeController> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Get.theme.scaffoldBackgroundColor,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.max,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             buildMenuBar(),
-            buildTtitle(),
-            buildStatusView(),
+            Obx(() => buildTtitle(
+                controller.userStatusMap[controller.currentUser.uid] ??
+                    UserStatus())),
+            Obx(() => buildStatusView(
+                controller.userStatusMap[controller.currentUser.uid] ??
+                    UserStatus())),
             Expanded(
               child: Padding(
                 padding: const EdgeInsetsDirectional.fromSTEB(15, 15, 15, 15),
@@ -32,7 +37,10 @@ class HomePage extends GetView<HomeController> {
                     children: [
                       TabBar(
                         isScrollable: true,
-                        labelStyle: Get.textTheme.bodyLarge,
+                        labelStyle: Get.textTheme.bodyMedium,
+                        labelColor: Get.theme.colorScheme.outline,
+                        unselectedLabelColor: const Color(0xFF8B97A2),
+                        unselectedLabelStyle: Get.textTheme.bodyMedium,
                         indicatorColor: Get.theme.colorScheme.tertiary,
                         indicatorWeight: 3,
                         tabs: const [
@@ -99,7 +107,7 @@ class HomePage extends GetView<HomeController> {
     );
   }
 
-  Widget buildTtitle() {
+  Widget buildTtitle(UserStatus userStatus) {
     return Padding(
       padding: const EdgeInsetsDirectional.fromSTEB(20, 0, 20, 0),
       child: Row(
@@ -107,7 +115,7 @@ class HomePage extends GetView<HomeController> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(
-            'myID',
+            userStatus.name ?? 'Login Error',
             style: Get.textTheme.displayLarge?.copyWith(
               fontFamily: 'Outfit',
               fontSize: 40,
@@ -118,7 +126,7 @@ class HomePage extends GetView<HomeController> {
     );
   }
 
-  Widget buildStatusView() {
+  Widget buildStatusView(UserStatus userStatus) {
     return Padding(
       padding: const EdgeInsetsDirectional.fromSTEB(0, 45, 0, 0),
       child: Material(
@@ -152,23 +160,12 @@ class HomePage extends GetView<HomeController> {
                   buttonSize: 80,
                   fillColor: Get.theme.colorScheme.tertiary,
                   icon: Icon(
-                    Icons.directions_bike,
+                    mapStatusTypeToIcon[userStatus.statusType],
                     color: Get.theme.iconTheme.color,
                     size: 50,
                   ),
                   onPressed: () async {
-                    // await showModalBottomSheet(
-                    //   isScrollControlled: true,
-                    //   backgroundColor: Colors.transparent,
-                    //   barrierColor: Get.theme.backgroundColor,
-                    //   context: context,
-                    //   builder: (context) {
-                    //     return Padding(
-                    //       padding: MediaQuery.of(context).viewInsets,
-                    //       child: const ChooseStatusSheet(),
-                    //     );
-                    //   },
-                    // );
+                    controller.selectStatus();
                   },
                 ),
                 Row(
@@ -176,10 +173,9 @@ class HomePage extends GetView<HomeController> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      mapStatusTypeToString[controller
-                              .userStatusMap?[controller.user?.name]
-                              ?.statusType] ??
-                          '',
+                      mapStatusTypeToString[
+                              userStatus.statusType ?? StatusType.INVALID] ??
+                          '잘못된상태',
                       style: Get.textTheme.headlineMedium,
                     ),
                   ],
@@ -188,7 +184,8 @@ class HomePage extends GetView<HomeController> {
                   mainAxisSize: MainAxisSize.max,
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text('Hello World', style: Get.textTheme.bodyMedium),
+                    Text(userStatus.comment ?? '상태를 입력해주세요',
+                        style: Get.textTheme.bodyMedium),
                   ],
                 ),
               ],

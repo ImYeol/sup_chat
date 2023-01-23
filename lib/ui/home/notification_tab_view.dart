@@ -15,15 +15,25 @@ class NotificationTabView extends StatelessWidget {
     final notifications = controller.notifications;
     return Padding(
         padding: const EdgeInsetsDirectional.fromSTEB(0, 10, 0, 0),
-        child: ListView.builder(
-          itemCount: controller.notifications.length,
-          itemBuilder: (context, index) => NotificationCard(
-              text: NotificationText(
-                  title: notifications[index].title,
-                  subTitle: notifications[index].subTitle),
-              icon: NotificationIcon(
-                iconData: notifications[index].icon,
-              )),
-        ));
+        child: Obx(() => ListView.builder(
+              itemCount: controller.notifications.length,
+              itemBuilder: (context, index) => Dismissible(
+                key: Key(notifications[index].createdAt.toString()),
+                background: Container(
+                  color: Theme.of(context).scaffoldBackgroundColor,
+                ),
+                onDismissed: (direction) =>
+                    controller.onMessageDeleted(notifications[index]),
+                child: NotificationCard(
+                  text: NotificationText(
+                      title: notifications[index].title,
+                      subTitle: notifications[index].subTitle),
+                  icon: NotificationIcon(
+                    iconData: notifications[index].icon,
+                  ),
+                  createdAt: notifications[index].createdAt,
+                ),
+              ),
+            )));
   }
 }

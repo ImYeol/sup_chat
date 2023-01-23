@@ -13,6 +13,9 @@ class UserStatusCard extends StatelessWidget {
   TextStyle? statusTextStyle;
   String? labelText;
   TextStyle? labelTextStyle;
+  void Function()? onTap;
+  void Function()? onDoubleTap;
+  void Function()? onLongPress;
 
   UserStatusCard(
       {Key? key,
@@ -26,7 +29,10 @@ class UserStatusCard extends StatelessWidget {
       required this.statusText,
       this.statusTextStyle,
       this.labelText,
-      this.labelTextStyle})
+      this.labelTextStyle,
+      this.onTap,
+      this.onDoubleTap,
+      this.onLongPress})
       : super(key: key);
 
   @override
@@ -37,49 +43,54 @@ class UserStatusCard extends StatelessWidget {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(15),
       ),
-      child: Container(
+      child: Ink(
         width: width,
         height: height,
         decoration: BoxDecoration(
           color: backgroundColor ?? Theme.of(context).colorScheme.secondary,
           borderRadius: BorderRadius.circular(15),
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.max,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Padding(
-              padding: const EdgeInsetsDirectional.fromSTEB(7, 0, 0, 0),
-              child: Row(
+        child: InkWell(
+          onTap: onTap,
+          onDoubleTap: onDoubleTap,
+          child: Column(
+            mainAxisSize: MainAxisSize.max,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Padding(
+                padding: const EdgeInsetsDirectional.fromSTEB(7, 0, 0, 0),
+                child: Row(
+                  mainAxisSize: MainAxisSize.max,
+                  children: [
+                    Text(
+                      displayText ?? '',
+                      style: Theme.of(context)
+                          .textTheme
+                          .bodyLarge
+                          ?.copyWith(fontSize: 11),
+                    ),
+                  ],
+                ),
+              ),
+              icon,
+              Text(
+                statusText,
+                style:
+                    statusTextStyle ?? Theme.of(context).textTheme.labelMedium,
+              ),
+              Row(
                 mainAxisSize: MainAxisSize.max,
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
-                    displayText ?? '',
-                    style: Theme.of(context)
-                        .textTheme
-                        .bodyLarge
-                        ?.copyWith(fontSize: 11),
+                    labelText ?? '',
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.labelSmall,
                   ),
                 ],
               ),
-            ),
-            icon,
-            Text(
-              statusText,
-              style: statusTextStyle ?? Theme.of(context).textTheme.labelMedium,
-            ),
-            Row(
-              mainAxisSize: MainAxisSize.max,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  labelText ?? '',
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.labelSmall,
-                ),
-              ],
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

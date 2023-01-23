@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:get/get.dart';
+import 'package:sup_chat/model/fcm_token.dart';
 import 'package:sup_chat/service/user_service.dart';
 
 class UserModel {
@@ -9,7 +10,6 @@ class UserModel {
   bool exists = false;
   Timestamp? updatedAt;
   Timestamp? createdAt;
-  DocumentReference? friends;
 
   UserModel({
     this.uid = '',
@@ -39,8 +39,6 @@ class UserModel {
         ? Timestamp(data['updatedAt'], 0)
         : data['updatedAt'];
     print("createdAt = $createdAt, updatedAt = $updatedAt");
-    //friends = List.from(data[])
-    print("friends : ${data['friends']}");
   }
 
   UserModel.fromSnapshot(DocumentSnapshot snapshot) {
@@ -51,4 +49,10 @@ class UserModel {
   String toString() {
     return "uid = $uid, name = $name, updatedAt = $updatedAt createdAt = $createdAt";
   }
+
+  @override
+  bool operator ==(covariant UserModel other) => uid == other.uid;
+
+  @override
+  int get hashCode => name.hashCode;
 }

@@ -25,18 +25,18 @@ class ButtonWrapper extends StatelessWidget {
     return ElevatedButton(
         onPressed: onPressed,
         style: ElevatedButton.styleFrom(
-          shape: RoundedRectangleBorder(
-              borderRadius: options.borderRadius, side: options.borderSide),
-          backgroundColor: options.color,
-          textStyle: options.textStyle,
-        ),
+            shape: RoundedRectangleBorder(
+                borderRadius: options.borderRadius, side: options.borderSide),
+            backgroundColor: options.color,
+            textStyle: options.textStyle,
+            elevation: options.elevation ?? 0),
         child: Container(
           width: options.width,
           height: options.height,
           padding: padding,
           alignment: alignment,
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [Container(child: icon), Text(text)],
           ),
         ));

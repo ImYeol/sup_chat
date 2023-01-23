@@ -1,43 +1,84 @@
 import 'dart:async';
-
 import 'package:get/get.dart';
 import 'package:firebase_database/firebase_database.dart';
-import 'package:sup_chat/model/user_model.dart';
 import 'package:sup_chat/model/user_status.dart';
 
 class StatusService extends GetxService {
-  final databaseReference = FirebaseDatabase.instance.ref('status');
+  final databaseReference = FirebaseDatabase.instance.ref('state');
+  final userStatusMap = <String, UserStatus>{}.obs;
+  final _subscriptionMap = <String, StreamSubscription>{};
 
-  StreamSubscription observeUserStatusRef(
-      String uid, Function(DatabaseEvent) onData,
-      {Function? onError, Function()? onDone, bool? cancerOnError}) {
-    return databaseReference.child(uid).onValue.listen(onData,
-        onError: onError, onDone: onDone, cancelOnError: cancerOnError);
+  void onUserStatusChanged(DatabaseEvent event) {
+    print(
+        "onUserStatusChanged : ${event.snapshot.key} : ${event.snapshot.value}");
+    final snapshot = (event.snapshot.value ?? {}) as dynamic;
+    final status = UserStatus.fromJson(snapshot);
+    final uid = event.snapshot.key;
+    print("onStatusChanged key = ${event.snapshot.key}, status = $status");
+    if (uid == null) return;
+    userStatusMap[uid] = status;
   }
 
-  Future<void> create(String uid, Map<String, dynamic> data) {
+  void observeUserStatusRef(String uid) {
+    try {
+      final streamSubscription = databaseReference.child(uid).onValue.listen(
+          onUserStatusChanged,
+          onError: (error) =>
+              print("observeUserStatusRef subscription onError $error"),
+          cancelOnError: true);
+      _subscriptionMap[uid] = streamSubscription;
+    } catch (e) {
+      print("observeUserStatusRef : $e");
+    }
+  }
+
+  void unobserveUserStatusRef(String uid) {
+    _subscriptionMap[uid]?.cancel();
+  }
+
+  Future<void> create(String uid, UserStatus status) {
+    print("create : $status");
     return databaseReference
         .child(uid)
-        .set(data)
+        .set(status.toJson())
         .then((value) => print('data of $uid has been stored'))
         .catchError((error) => 'data store error : $error');
   }
 
-  Future<Map<String, dynamic>?> read(String uid) async {
+  Future<UserStatus> read(String uid) async {
     final snapshot = await databaseReference.child(uid).get();
     if (snapshot.exists) {
-      return snapshot.value as Map<String, dynamic>;
+      print("read state - ${snapshot.value}");
+      return UserStatus.fromJson(snapshot.value as dynamic);
     } else {
       print('No data available.');
-      return null;
+      return UserStatus();
     }
   }
 
-  Future<void> update(String uid, Map<String, dynamic> data) {
-    return databaseReference.child(uid).update({'description': 'CEO'});
+  Future<void> update(String uid, UserStatus status, {useCache = false}) async {
+    if (useCache) {
+      userStatusMap.update(
+        uid,
+        (value) => status,
+        ifAbsent: () => status,
+      );
+    } else {
+      databaseReference.child(uid).update(status.toJson());
+    }
   }
 
   Future<void> delete(String uid) {
     return databaseReference.child(uid).remove();
+  }
+
+  @override
+  void onClose() {
+    _subscriptionMap.forEach((key, value) {
+      value.cancel();
+    });
+    _subscriptionMap.clear();
+    userStatusMap.clear();
+    super.onClose();
   }
 }

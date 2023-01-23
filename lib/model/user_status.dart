@@ -7,14 +7,14 @@ class UserStatus {
   StatusType? statusType;
   String? comment;
 
-  UserStatus({this.name, this.statusType, this.comment});
+  UserStatus({this.name, this.statusType = StatusType.INVALID, this.comment});
 
   Future<void> create(String uid) async {
-    return Get.find<StatusService>().create(uid, toJson());
+    return Get.find<StatusService>().create(uid, this);
   }
 
   Future<void> update(String uid) async {
-    return Get.find<StatusService>().update(uid, toJson());
+    return Get.find<StatusService>().update(uid, this);
   }
 
   Future<void> delete(String uid) async {
@@ -29,13 +29,14 @@ class UserStatus {
 
   Map<String, dynamic> toJson() => {
         'name': name ?? '',
-        'statusType': statusType ?? StatusType.INVALID,
+        'statusType': statusType?.index ?? StatusType.INVALID.index,
         'comment': comment ?? '',
       };
 
-  UserStatus.fromJson(Map<String, dynamic> json) {
+  UserStatus.fromJson(dynamic json) {
     name = json['name'] ?? '';
-    statusType = json['statusType'] ?? StatusType.INVALID;
+    statusType =
+        StatusType.values[json['statusType'] ?? StatusType.INVALID.index];
     comment = json['comment'] ?? '';
   }
 
